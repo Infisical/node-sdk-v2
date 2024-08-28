@@ -1,0 +1,292 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Infisical API",
+    "description": "List of all available APIs that can be consumed",
+    "version": "0.0.1"
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "An access token in Infisical"
+      }
+    },
+    "schemas": {}
+  },
+  "paths": {
+    "/api/v1/identities": {
+      "get": {
+        "description": "List identities",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "orgId",
+            "required": true,
+            "description": "The ID of the organization to list identities."
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "identities": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "role": {
+                            "type": "string"
+                          },
+                          "roleId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "nullable": true
+                          },
+                          "orgId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "identityId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "customRole": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              },
+                              "permissions": {},
+                              "description": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "slug"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "identity": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "authMethod": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "id"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "role",
+                          "orgId",
+                          "createdAt",
+                          "updatedAt",
+                          "identityId",
+                          "identity"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "identities"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identities/{identityId}": {
+      "get": {
+        "description": "Get an identity by id",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "identityId",
+            "required": true,
+            "description": "The ID of the identity to get details."
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "identity": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "roleId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "nullable": true
+                        },
+                        "orgId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "identityId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "customRole": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "slug": {
+                              "type": "string"
+                            },
+                            "permissions": {},
+                            "description": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "name",
+                            "slug"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "identity": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "authMethod": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "id"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "role",
+                        "orgId",
+                        "createdAt",
+                        "updatedAt",
+                        "identityId",
+                        "identity"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "identity"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://app.infisical.com",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Local server"
+    }
+  ]
+}
