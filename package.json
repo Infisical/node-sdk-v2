@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "generate-api:infisical": "openapi-generator-cli generate -i https://app.infisical.com/api/docs/json -g typescript-axios -o ./src/api/infisical/ --skip-validate-spec --additional-properties=useSingleRequestParameter=true,withoutPrefixEnums=true,enumNameSuffix=,withSeparateModelsAndApi=true,apiPackage=server,modelPackage=model --openapi-normalizer REFACTOR_ALLOF_WITH_PROPERTIES_ONLY=true"
+    "generate-api:infisical": "openapi-generator-cli generate -i https://app.infisical.com/api/docs/json -g typescript-axios -o ./src/api/infisical/ --skip-validate-spec --additional-properties=useSingleRequestParameter=true"
   },
   "keywords": [],
   "author": "",
