@@ -3,20 +3,22 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "generate-api:infisical": "openapi-generator-cli generate -i https://app.infisical.com/api/docs/json -g typescript-axios -o ./src/api/infisical/ --skip-validate-spec --additional-properties=useSingleRequestParameter=true"
+    "generate-api:infisical": "openapi-generator-cli generate -i https://app.infisical.com/api/docs/json -g typescript-axios -o ./src/infisicalapi_client --skip-validate-spec --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,apiPackage=server,modelPackage=model --openapi-normalizer REFACTOR_ALLOF_WITH_PROPERTIES_ONLY=true",    "build": "tsc && cp -R ./src/types ./lib"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@openapitools/openapi-generator-cli": "^2.13.5"
+    "@openapitools/openapi-generator-cli": "^2.13.5",
+    "tsc": "^2.0.4"
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",
     "@aws-sdk/credential-provider-node": "^3.637.0",
     "@aws-sdk/credential-providers": "^3.637.0",
     "@aws-sdk/signature-v4": "^3.374.0",
-    "axios": "^1.7.5"
+    "axios": "^1.7.5",
+    "typescript": "^5.5.4"
   }
 }

@@ -1,6 +1,6 @@
 import { InfisicalSDK } from "..";
-import { ApiV1AuthUniversalAuthLoginPostRequest } from "../api/infisical";
-import { DefaultApi as InfisicalApi } from "../api/infisical";
+import { ApiV1AuthUniversalAuthLoginPostRequest } from "../infisicalapi_client";
+import { DefaultApi as InfisicalApi } from "../infisicalapi_client";
 
 type AuthenticatorFunction = (accessToken: string) => InfisicalSDK;
 

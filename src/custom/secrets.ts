@@ -1,11 +1,11 @@
-import { Configuration, DefaultApi as InfisicalApi } from "../api/infisical";
+import { Configuration, DefaultApi as InfisicalApi } from "../infisicalapi_client";
 import type {
 	DefaultApiApiV3SecretsRawGetRequest,
 	DefaultApiApiV3SecretsRawSecretNameDeleteRequest,
 	DefaultApiApiV3SecretsRawSecretNameGetRequest,
 	DefaultApiApiV3SecretsRawSecretNamePatchRequest,
 	DefaultApiApiV3SecretsRawSecretNamePostRequest
-} from "../api/infisical";
+} from "../infisicalapi_client";
 
 export default class SecretsClient {
 	#apiInstance: InfisicalApi;
@@ -18,23 +18,41 @@ export default class SecretsClient {
 		return res.data;
 	};
 
-	retrieveSecret = async (options: DefaultApiApiV3SecretsRawSecretNameGetRequest) => {
+	getSecret = async (options: DefaultApiApiV3SecretsRawSecretNameGetRequest) => {
 		const res = await this.#apiInstance.apiV3SecretsRawSecretNameGet(options);
 		return res.data.secret;
 	};
 
-	updateSecret = async (options: DefaultApiApiV3SecretsRawSecretNamePatchRequest) => {
-		const res = await this.#apiInstance.apiV3SecretsRawSecretNamePatch(options);
+	updateSecret = async (
+		secretName: DefaultApiApiV3SecretsRawSecretNamePatchRequest["secretName"],
+		options: DefaultApiApiV3SecretsRawSecretNamePatchRequest["apiV3SecretsRawSecretNamePatchRequest"]
+	) => {
+		const res = await this.#apiInstance.apiV3SecretsRawSecretNamePatch({
+			secretName,
+			apiV3SecretsRawSecretNamePatchRequest: options
+		});
 		return res.data;
 	};
 
-	createSecret = async (options: DefaultApiApiV3SecretsRawSecretNamePostRequest) => {
-		const res = await this.#apiInstance.apiV3SecretsRawSecretNamePost(options);
+	createSecret = async (
+		secretName: DefaultApiApiV3SecretsRawSecretNamePostRequest["secretName"],
+		options: DefaultApiApiV3SecretsRawSecretNamePostRequest["apiV3SecretsRawSecretNamePostRequest"]
+	) => {
+		const res = await this.#apiInstance.apiV3SecretsRawSecretNamePost({
+			secretName,
+			apiV3SecretsRawSecretNamePostRequest: options
+		});
 		return res.data;
 	};
 
-	deleteSecret = async (options: DefaultApiApiV3SecretsRawSecretNameDeleteRequest) => {
-		const res = await this.#apiInstance.apiV3SecretsRawSecretNameDelete(options);
+	deleteSecret = async (
+		secretName: DefaultApiApiV3SecretsRawSecretNameDeleteRequest["secretName"],
+		options: DefaultApiApiV3SecretsRawSecretNameDeleteRequest["apiV3SecretsRawSecretNameDeleteRequest"]
+	) => {
+		const res = await this.#apiInstance.apiV3SecretsRawSecretNameDelete({
+			secretName,
+			apiV3SecretsRawSecretNameDeleteRequest: options
+		});
 		return res.data;
 	};
 }

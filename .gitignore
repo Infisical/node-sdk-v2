@@ -129,4 +129,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-/src/api/infisical/model/*.ts
+/src/infisicalapi_client
