@@ -13,8 +13,8 @@ npm install @infisical/sdk-v2
 ```typescript
 
 const client = new InfisicalSDK({
-		siteUrl: "your-infisical-instance.com" // Optional, defaults to https://app.infisical.com
-	});
+  siteUrl: "your-infisical-instance.com" // Optional, defaults to https://app.infisical.com
+});
 
 // Authenticate with Infisical
 await client.auth().universalAuth.login({
