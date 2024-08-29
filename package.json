@@ -2,6 +2,7 @@
   "name": "@infisical/sdk-v2",
   "version": "0.0.0",
   "main": "./lib/index.js",
+  "private": false,
   "files": [
     "lib"
   ],
