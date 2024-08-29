@@ -131,3 +131,5 @@ dist
 
 /src/infisicalapi_client
 /lib
+
+.DS_Store
