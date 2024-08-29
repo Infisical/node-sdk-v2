@@ -130,3 +130,4 @@ dist
 .pnp.*
 
 /src/infisicalapi_client
+/lib

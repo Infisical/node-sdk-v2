@@ -1,16 +1,30 @@
 {
-  "name": "infisical-node-sdk",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "@infisical/sdk-v2",
+  "version": "0.0.0",
+  "main": "./lib/index.js",
+  "files": [
+    "lib"
+  ],
   "scripts": {
-    "generate-api:infisical": "openapi-generator-cli generate -i https://app.infisical.com/api/docs/json -g typescript-axios -o ./src/infisicalapi_client --skip-validate-spec --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,apiPackage=server,modelPackage=model --openapi-normalizer REFACTOR_ALLOF_WITH_PROPERTIES_ONLY=true",    "build": "tsc && cp -R ./src/types ./lib"
+    "generate-api:infisical": "openapi-generator-cli generate -i https://app.infisical.com/api/docs/json -g typescript-axios -o ./src/infisicalapi_client --skip-validate-spec --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,apiPackage=server,modelPackage=model --openapi-normalizer REFACTOR_ALLOF_WITH_PROPERTIES_ONLY=true",
+    "build": "tsc"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "infisical",
+    "open-source",
+    "sdk",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/infisical/infisical-node-sdk"
+  },
+  "author": "Infisical Inc, <daniel@infisical.com>",
   "license": "ISC",
   "description": "",
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "^2.13.5",
+    "@types/node": "^22.5.1",
     "tsc": "^2.0.4"
   },
   "dependencies": {
