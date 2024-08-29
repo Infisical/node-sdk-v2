@@ -6,8 +6,9 @@
     "lib"
   ],
   "scripts": {
-    "generate-api:infisical": "openapi-generator-cli generate -i https://app.infisical.com/api/docs/json -g typescript-axios -o ./src/infisicalapi_client --skip-validate-spec --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,apiPackage=server,modelPackage=model --openapi-normalizer REFACTOR_ALLOF_WITH_PROPERTIES_ONLY=true",
-    "build": "tsc"
+    "generate-api:infisical": "openapi-generator-cli generate -i https://app.infisical.com/api/docs/json -g typescript-axios -o ./src/infisicalapi_client --skip-validate-spec --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,apiPackage=server,modelPackage=model --openapi-normalizer REFACTOR_ALLOF_WITH_PROPERTIES_ONLY=true && npm run post-generate-api",
+    "post-generate-api": "rm ./src/infisicalapi_client/git_push.sh",
+    "build": "tsup src/index.ts --out-dir lib --dts --format cjs,esm --tsconfig tsconfig.json --no-splitting"
   },
   "keywords": [
     "infisical",
@@ -25,7 +26,8 @@
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "^2.13.5",
     "@types/node": "^22.5.1",
-    "tsc": "^2.0.4"
+    "tsc": "^2.0.4",
+    "tsup": "^8.2.4"
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",
