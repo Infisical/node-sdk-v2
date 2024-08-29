@@ -198,12 +198,3 @@ const deletedSecret = await client.secrets().deleteSecret("SECRET_TO_DELETE", {
 
 **Returns:**
 - `ApiV3SecretsRawSecretNamePost200Response`: The response after deleting the secret.
-
-### `rest`
-
-The `rest` component exposes all available API endpoints in a standardized format. This allows for more advanced or custom operations not covered by the high-level methods.
-
-```python
-# Example of using a custom API endpoint
-custom_response = client.rest.custom_endpoint_method(param1="value1", param2="value2")
-```
