@@ -24,7 +24,7 @@ await client.auth().universalAuth.login({
 
 const allSecrets = await client.secrets().listSecrets({
   environment: "dev" // stg, dev, prod, or custom environment slugs
-  workspaceId: "<"<your-project-id>">"
+  workspaceId: "<your-project-id>"
 });
 
 console.log("Fetched secrets", allSecrets)
