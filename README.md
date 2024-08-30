@@ -11,6 +11,7 @@ npm install @infisical/sdk-v2
 ## Getting Started
 
 ```typescript
+import { InfisicalSDK } from '@infisical/sdk-v2'
 
 const client = new InfisicalSDK({
   siteUrl: "your-infisical-instance.com" // Optional, defaults to https://app.infisical.com
@@ -98,16 +99,18 @@ const allSecrets = await client.secrets().listSecrets({
 ```
 
 **Parameters:**
-- `projectId` (string): The ID of your project.
-- `environment` (str): The environment in which to create the secret.
-- `secretValue` (str): The value of the secret.
-- `secretPath` (string, optional): The path to the secret.
-- `secretComment` (str, optional): A comment associated with the secret.
-- `skipMultilineEncoding` (bool, optional): Whether to skip encoding for multiline secrets.
-- `secretReminderNote` (string, optional): A note for the secret reminder.
-- `secretReminderRepeatDays` (number, optional): Number of days after which to repeat secret reminders.
-- `tagIds` (string[], optional): Array of tags to assign to the new secret.
-- `type` (personal | shared, optional): Which type of secret to create.
+- `secretName` (string): The name of the secret to create
+- `options` (object):
+  - `projectId` (string): The ID of your project.
+  - `environment` (str): The environment in which to create the secret.
+  - `secretValue` (str): The value of the secret.
+  - `secretPath` (string, optional): The path to the secret.
+  - `secretComment` (str, optional): A comment associated with the secret.
+  - `skipMultilineEncoding` (bool, optional): Whether to skip encoding for multiline secrets.
+  - `secretReminderNote` (string, optional): A note for the secret reminder.
+  - `secretReminderRepeatDays` (number, optional): Number of days after which to repeat secret reminders.
+  - `tagIds` (string[], optional): Array of tags to assign to the new secret.
+  - `type` (personal | shared, optional): Which type of secret to create.
 
 **Returns:**
 - `ApiV3SecretsRawSecretNamePost200Response`: The response after creating the secret.
@@ -134,18 +137,20 @@ const updatedSecret = await client.secrets().updateSecret("SECRET_TO_UPDATE", {
 ```
 
 **Parameters:**
-- `environment` (str): The environment in which to update the secret.
-- `projectId` (str): The ID of your project.
-- `secretValue` (str, optional): The new value of the secret.
-- `newSecretName` (str, optional): A new name for the secret.
-- `secretComment` (str, optional): An updated comment associated with the secret.
-- `secretPath` (str): The path to the secret.
-- `secretReminderNote` (str, optional): An updated note for the secret reminder.
-- `secretReminderRepeatDays` (number, optional): Updated number of days after which to repeat secret reminders.
-- `skipMultilineEncoding` (bool, optional): Whether to skip encoding for multiline secrets.
-- `tagIds` (string[], optional): Array of tags to assign to the secret.
-- `type` (personal | shared, optional): Which type of secret to create.
-- `metadata` (object, optional): Assign additional details to the secret, accessible through the API.
+- `secretName` (string): The name of the secret to update.`
+- `options` (object):
+  - `environment` (str): The environment in which to update the secret.
+  - `projectId` (str): The ID of your project.
+  - `secretValue` (str, optional): The new value of the secret.
+  - `newSecretName` (str, optional): A new name for the secret.
+  - `secretComment` (str, optional): An updated comment associated with the secret.
+  - `secretPath` (str): The path to the secret.
+  - `secretReminderNote` (str, optional): An updated note for the secret reminder.
+  - `secretReminderRepeatDays` (number, optional): Updated number of days after which to repeat secret reminders.
+  - `skipMultilineEncoding` (bool, optional): Whether to skip encoding for multiline secrets.
+  - `tagIds` (string[], optional): Array of tags to assign to the secret.
+  - `type` (personal | shared, optional): Which type of secret to create.
+  - `metadata` (object, optional): Assign additional details to the secret, accessible through the API.
 
 **Returns:**
 - `ApiV3SecretsRawSecretNamePost200Response`: The response after updating the secret.
@@ -191,10 +196,160 @@ const deletedSecret = await client.secrets().deleteSecret("SECRET_TO_DELETE", {
 ```
 
 **Parameters:**
-- `projectId` (str): The ID of your project.
-- `environment` (str): The environment in which to delete the secret.
-- `secret_path` (str, optional): The path to the secret.
-- `type` (personal | shared, optional): The type of secret to delete.
+- `secretName` (string): The name of the secret to delete.
+- `options` (object): 
+  - `projectId` (str): The ID of your project.
+  - `environment` (str): The environment in which to delete the secret.
+  - `secret_path` (str, optional): The path to the secret.
+  - `type` (personal | shared, optional): The type of secret to delete.
 
 **Returns:**
 - `ApiV3SecretsRawSecretNamePost200Response`: The response after deleting the secret.
+
+
+
+
+### `dynamicSecrets`
+
+
+#### Create a new dynamic secret
+
+Creating a new dynamic secret can be done by using the `.dynamicSecrets().create({})` function. More details below.
+
+
+The input for creating new dynamic secret varies greatly between secret types.
+For a more in-depth description of each input type for each dynamic secret type, please refer to [our API documentation](https://infisical.com/docs/api-reference/endpoints/dynamic-secrets/create)
+
+
+##### Example for creating a new Redis dynamic secret
+
+```typescript
+import { InfisicalSDK, DynamicSecretProviders } from "@infisical/sdk-v2";
+	const client = new InfisicalSDK();
+
+	await client.auth().universalAuth.login({
+		// For localhost
+		clientId: "CLIENT_ID",
+		clientSecret: "CLIENT_SECRET"
+	});
+const dynamicSecret = await client.dynamicSecrets().create({
+  provider: {
+    type: DynamicSecretProviders.Redis,
+    inputs: {
+      host: "<redis-host>",
+      port: 6479,
+      username: "<redis-username>",
+      password: "<redis-password>", // Only required if your Redis instance uses authentication (recommended)
+      creationStatement: "ACL SETUSER {{username}} on >{{password}} ~* &* +@all",
+      revocationStatement: "ACL DELUSER {{username}}"
+    }
+  },
+  defaultTTL: "1h",
+  maxTTL: "24h",
+  name: "dynamic-secret-name",
+  projectSlug: "project-slug",
+  environmentSlug: "dev"
+});
+console.log(dynamicSecret);
+```
+
+**Returns:**
+- `ApiV1DynamicSecretsPost200Response['dynamicSecret']`: The response after creating the dynamic secret
+
+
+#### Delete a dynamic secret
+
+Note: Deleting a dynamic secret will also delete it's associated leases.
+
+```typescript
+const deletedDynamicSecret = await client.dynamicSecrets().delete("dynamic-secret-name", {
+  environmentSlug: "dev",
+  projectSlug: "project-slug"
+});
+```
+
+**Parameters:**
+- `secretName` (string): The ID of the dynamic secret to delete
+- `options` (object):
+  - `projectSlug` (str): The ID of your project.
+  - `environment` (str): The environment in which to delete the secret.
+
+**Returns:**
+- `ApiV1DynamicSecretsDelete200Response['dynamicSecret']`: The response after deleting the dynamic secret
+
+### `dynamicSecrets.leases`
+In this section you'll learn how to work with dynamic secret leases
+
+
+#### Create a new lease
+
+```typescript
+const lease = await client.dynamicSecrets().leases.create({
+  dynamicSecretName: "dynamic-secret-name",
+  environmentSlug: "dev",
+  projectSlug: "your-project-slug",
+  path: "/foo/bar",
+  ttl: "5m" // Optional
+});
+
+console.log(lease);
+```
+
+**Your dynamic secret credentials will be contained user `lease.data` in this example.**
+
+**Parameters:**
+- `dynamicSecretName` (string): The name of the dynamic secret you wish to create a lease for.
+- `projectSlug` (string): The slug of the project where the secret is located.
+- `environmentSlug` (string): The environment where the dynamic secret is located.
+- `path` (string, optional): The path of where the dynamic secret is located. 
+- `ttl` (string, optional): A [vercel/ms](https://github.com/vercel/ms) encoded string representation of how long the lease credentials should be valid for. This will default to the dynamic secret's default TTL if not specified.
+
+**Returns:**
+- `ApiV1DynamicSecretsLeasesPost200Response`: The dynamic secret lease result.
+
+
+#### Delete a lease
+```typescript
+const deletedLease = await client.dynamicSecrets().leases.delete(newLease.lease.id, {
+  environmentSlug: "dev",
+  projectSlug: "test-zb-3a",
+  path: "/foo/bar",
+  isForced: false // Wether or not to forcefully delete the lease. This can't guarantee that the lease will be deleted from the external provider.
+});
+```
+
+**Parameters:**
+- `leaseId` (string): The ID of the lease you want to delete.
+- options:
+  - `projectSlug` (string): The slug of the project where the secret is located.
+  - `environmentSlug` (string): The environment where the dynamic secret is located.
+  - `path` (string, optional): The path of where the dynamic secret is located. 
+  - `isForced` (bool, optional): Wether or not to forcefully delete the lease. This can't guarantee that the lease will be deleted from the external provider, and is potentially unsafe for sensitive dynamic secrets.
+
+**Returns:**
+- `ApiV1DynamicSecretsLeasesLeaseIdDelete200Response`: The deleted lease result.
+
+#### Renew a lease
+
+Please note that renewals must happen **before** the lease has fully expired. After renewing the lease, you won't be given new credentials. Instead the existing credentials will continue to live for the specified TTL
+
+```typescript
+const renewedLease = await client.dynamicSecrets().leases.renew(newLease.lease.id, {
+		environmentSlug: "dev",
+		projectSlug: "project-slug",
+		path: "/foo/bar", // Optional
+		ttl: "10m" // Optional
+	});
+```
+
+**Parameters:**
+- `leaseId` (string): The ID of the lease you want to delete.
+- `options` (object):
+  - `projectSlug` (string): The slug of the project where the secret is located.
+  - `environmentSlug` (string): The environment where the dynamic secret is located.
+  - `path` (string, optional): The path of where the dynamic secret is located. 
+  - `ttl` (string, optional): A [vercel/ms](https://github.com/vercel/ms) encoded string representation of how long the lease credentials should be valid for. This will default to the dynamic secret's default TTL if not specified.
+
+**Returns:**
+- `ApiV1DynamicSecretsLeasesLeaseIdDelete200Response`: The renewed lease response _(doesn't contain new credentials)_.
+
