@@ -8,6 +8,12 @@ import type {
 	DefaultApiApiV1DynamicSecretsPostRequest
 } from "../infisicalapi_client";
 
+import type { TDynamicSecretProvider } from "./schemas/dynamic-secrets";
+
+type CreateDynamicSecretOptions = Omit<DefaultApiApiV1DynamicSecretsPostRequest["apiV1DynamicSecretsPostRequest"], "provider"> & {
+	provider: TDynamicSecretProvider;
+};
+
 export default class DynamicSecretsClient {
 	#apiInstance: InfisicalApi;
 	#requestOptions: RawAxiosRequestConfig | undefined;
@@ -16,15 +22,15 @@ export default class DynamicSecretsClient {
 		this.#requestOptions = requestOptions;
 	}
 
-	async create(options: DefaultApiApiV1DynamicSecretsPostRequest["apiV1DynamicSecretsPostRequest"]) {
+	async create(options: CreateDynamicSecretOptions) {
 		const res = await this.#apiInstance.apiV1DynamicSecretsPost(
 			{
-				apiV1DynamicSecretsPostRequest: options
+				apiV1DynamicSecretsPostRequest: options as DefaultApiApiV1DynamicSecretsPostRequest["apiV1DynamicSecretsPostRequest"]
 			},
 			this.#requestOptions
 		);
 
-		return res.data;
+		return res.data.dynamicSecret;
 	}
 
 	async delete(dynamicSecretName: string, options: DefaultApiApiV1DynamicSecretsNameDeleteRequest["apiV1DynamicSecretsNameDeleteRequest"]) {
@@ -36,7 +42,7 @@ export default class DynamicSecretsClient {
 			this.#requestOptions
 		);
 
-		return res.data;
+		return res.data.dynamicSecret;
 	}
 
 	leases = {
