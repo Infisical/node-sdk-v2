@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "generate-api:infisical": "openapi-generator-cli generate -i https://app.infisical.com/api/docs/json -g typescript-axios -o ./src/infisicalapi_client --skip-validate-spec --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,apiPackage=server,modelPackage=model --openapi-normalizer REFACTOR_ALLOF_WITH_PROPERTIES_ONLY=true && npm run post-generate-api",
+    "generate-api:infisical-dev": "openapi-generator-cli generate -i http://localhost:8080/api/docs/json -g typescript-axios -o ./src/infisicalapi_client --skip-validate-spec --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,apiPackage=server,modelPackage=model --openapi-normalizer REFACTOR_ALLOF_WITH_PROPERTIES_ONLY=true && npm run post-generate-api",
     "post-generate-api": "rm ./src/infisicalapi_client/git_push.sh",
     "build": "tsup src/index.ts --out-dir lib --dts --format cjs,esm --tsconfig tsconfig.json --no-splitting"
   },
