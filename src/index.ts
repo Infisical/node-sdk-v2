@@ -5,6 +5,8 @@ import AuthClient from "./custom/auth";
 import { RawAxiosRequestConfig } from "axios";
 import DynamicSecretsClient from "./custom/dynamic-secrets";
 
+import * as ApiClient from "./infisicalapi_client";
+
 const buildRestClient = (apiClient: InfisicalApi, requestOptions?: RawAxiosRequestConfig) => {
 	return {
 		// Add more as we go
@@ -70,4 +72,5 @@ class InfisicalSDK {
 	rest = () => buildRestClient(this.#apiInstance, this.#requestOptions);
 }
 
-export { InfisicalSDK };
+export { InfisicalSDK, ApiClient };
+export * from "./custom/schemas";
