@@ -4,23 +4,13 @@ import { DefaultApi as InfisicalApi } from "../infisicalapi_client";
 
 type AuthenticatorFunction = (accessToken: string) => InfisicalSDK;
 
-const getAwsRegion = () => {
-	// Implement AWS region retrieval logic here
-	// For simplicity, we'll use an environment variable
-	const region = process.env.AWS_REGION;
-	if (!region) {
-		throw new Error("AWS region not set");
-	}
-	return region;
-};
-
 export default class AuthClient {
 	sdkAuthenticator: AuthenticatorFunction;
 	apiClient: InfisicalApi;
 
-	constructor(authenticator: AuthenticatorFunction) {
+	constructor(authenticator: AuthenticatorFunction, apiInstance: InfisicalApi) {
 		this.sdkAuthenticator = authenticator;
-		this.apiClient = new InfisicalApi();
+		this.apiClient = apiInstance;
 	}
 
 	universalAuth = {
@@ -37,10 +27,3 @@ export default class AuthClient {
 		return this.sdkAuthenticator(token);
 	};
 }
-
-import * as crypto from "crypto";
-import axios from "axios";
-import { SignatureV4 } from "@aws-sdk/signature-v4";
-import { Sha256 } from "@aws-crypto/sha256-js";
-import { defaultProvider } from "@aws-sdk/credential-provider-node";
-import { fromNodeProviderChain } from "@aws-sdk/credential-providers";

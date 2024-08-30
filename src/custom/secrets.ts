@@ -45,7 +45,7 @@ const convertBool = (value: boolean | undefined) => (value ? "true" : "false");
 
 export default class SecretsClient {
 	#apiInstance: InfisicalApi;
-	constructor(private apiInstance: InfisicalApi) {
+	constructor(apiInstance: InfisicalApi) {
 		this.#apiInstance = apiInstance;
 	}
 
