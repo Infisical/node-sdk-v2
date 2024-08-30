@@ -2,17 +2,14 @@ import { Configuration, DefaultApi as InfisicalApi } from "./infisicalapi_client
 import { DefaultApiApiV1DynamicSecretsLeasesPostRequest } from "./infisicalapi_client";
 import SecretsClient from "./custom/secrets";
 import AuthClient from "./custom/auth";
+import { RawAxiosRequestConfig } from "axios";
+import DynamicSecretsClient from "./custom/dynamic-secrets";
 
-const buildRestClient = (apiClient: InfisicalApi, accessToken: string) => {
-	const defaultOptions = {
-		headers: {
-			Authorization: `Bearer ${accessToken}`
-		}
-	};
-
+const buildRestClient = (apiClient: InfisicalApi, requestOptions?: RawAxiosRequestConfig) => {
 	return {
+		// Add more as we go
 		apiV1DynamicSecretsLeasesPost: (options: DefaultApiApiV1DynamicSecretsLeasesPostRequest) =>
-			apiClient.apiV1DynamicSecretsLeasesPost(options, defaultOptions)
+			apiClient.apiV1DynamicSecretsLeasesPost(options, requestOptions)
 	};
 };
 
@@ -23,16 +20,15 @@ type InfisicalSDKOptions = {
 
 class InfisicalSDK {
 	#apiInstance: InfisicalApi;
-	// #accessToken: string; // No need to store the auth token here
 
+	#requestOptions: RawAxiosRequestConfig | undefined;
 	#secretsClient: SecretsClient;
+	#dynamicSecretsClient: DynamicSecretsClient;
 	#authClient: AuthClient;
 	#basePath: string;
-	#accessToken: string;
 
 	constructor(options?: InfisicalSDKOptions) {
 		this.#basePath = options?.siteUrl || "https://app.infisical.com";
-		this.#accessToken = "";
 
 		this.#apiInstance = new InfisicalApi(
 			new Configuration({
@@ -41,8 +37,9 @@ class InfisicalSDK {
 		);
 
 		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance);
-		this.#secretsClient = new SecretsClient(this.#apiInstance);
-		this.rest = () => buildRestClient(this.#apiInstance, this.#accessToken);
+		this.#dynamicSecretsClient = new DynamicSecretsClient(this.#apiInstance, this.#requestOptions);
+		this.#secretsClient = new SecretsClient(this.#apiInstance, this.#requestOptions);
+		this.rest = () => buildRestClient(this.#apiInstance, this.#requestOptions);
 	}
 
 	private authenticate(accessToken: string) {
@@ -53,17 +50,24 @@ class InfisicalSDK {
 			})
 		);
 
-		this.#accessToken = accessToken;
-		this.#secretsClient = new SecretsClient(this.#apiInstance);
+		this.#requestOptions = {
+			headers: {
+				Authorization: `Bearer ${accessToken}`
+			}
+		};
+
+		this.rest = () => buildRestClient(this.#apiInstance, this.#requestOptions);
+		this.#secretsClient = new SecretsClient(this.#apiInstance, this.#requestOptions);
+		this.#dynamicSecretsClient = new DynamicSecretsClient(this.#apiInstance, this.#requestOptions);
 		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance);
-		this.rest = () => buildRestClient(this.#apiInstance, this.#accessToken);
 
 		return this;
 	}
 
 	secrets = () => this.#secretsClient;
+	dynamicSecrets = () => this.#dynamicSecretsClient;
 	auth = () => this.#authClient;
-	rest = () => buildRestClient(this.#apiInstance, this.#accessToken);
+	rest = () => buildRestClient(this.#apiInstance, this.#requestOptions);
 }
 
 export { InfisicalSDK };
