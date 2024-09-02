@@ -1,5 +1,5 @@
 {
-  "name": "@infisical/sdk-v2",
+  "name": "@infisical/sdk",
   "version": "0.0.0",
   "main": "./lib/index.js",
   "private": false,
