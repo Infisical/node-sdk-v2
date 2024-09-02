@@ -48,7 +48,7 @@ jobs:
               run: npm pack
 
             - name: Publish NPM
-              run: npm publish --tarball=./infisical-sdk-${{github.ref_name}} --access public --tag v3 --registry=https://registry.npmjs.org/ # todo: remove dry run
+              run: npm publish --tarball=./infisical-sdk-${{github.ref_name}} --access public --tag infisical-v3 --registry=https://registry.npmjs.org/ # todo: remove dry run
               env:
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
