@@ -5,13 +5,13 @@ The Infisical SDK provides a convenient way to interact with the Infisical API.
 ## Installation
 
 ```bash
-npm install @infisical/sdk-v2
+npm install @infisical/sdk
 ```
 
 ## Getting Started
 
 ```typescript
-import { InfisicalSDK } from '@infisical/sdk-v2'
+import { InfisicalSDK } from '@infisical/sdk'
 
 const client = new InfisicalSDK({
   siteUrl: "your-infisical-instance.com" // Optional, defaults to https://app.infisical.com
@@ -224,7 +224,7 @@ For a more in-depth description of each input type for each dynamic secret type,
 ##### Example for creating a new Redis dynamic secret
 
 ```typescript
-import { InfisicalSDK, DynamicSecretProviders } from "@infisical/sdk-v2";
+import { InfisicalSDK, DynamicSecretProviders } from "@infisical/sdk";
 	const client = new InfisicalSDK();
 
 	await client.auth().universalAuth.login({
