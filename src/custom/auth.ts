@@ -3,7 +3,6 @@ import { ApiV1AuthUniversalAuthLoginPostRequest } from "../infisicalapi_client";
 import { DefaultApi as InfisicalApi } from "../infisicalapi_client";
 import { MACHINE_IDENTITY_ID_ENV_NAME } from "./constants";
 import { getAwsRegion, performAwsIamLogin } from "./util";
-import AWS from "aws-sdk";
 
 type AuthenticatorFunction = (accessToken: string) => InfisicalSDK;
 
