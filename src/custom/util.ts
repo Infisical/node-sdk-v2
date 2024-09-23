@@ -66,9 +66,9 @@ export const performAwsIamLogin = async (baseUrl: string, identityId: string, re
 		}
 	);
 
-	let host = signOpts.host;
-	if (signOpts.host) {
-		host = `${signOpts.host.replace(".sts", `.sts.${region}.`)}`;
+	let host = (signOpts as any)["Host"];
+	if (signOpts as any["Host"]) {
+		host = `${(signOpts as any)["Host"].replace(".sts", `.sts.${region}.`)}`;
 	}
 
 	console.log(signOpts);
