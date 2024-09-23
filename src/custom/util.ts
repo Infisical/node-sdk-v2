@@ -34,6 +34,12 @@ export const getAwsRegion = async () => {
 export const performAwsIamLogin = async (baseUrl: string, identityId: string, region: string) => {
 	const body = "Action=GetCallerIdentity&Version=2011-06-15";
 
+	AWS.config.update({
+		region: region
+	});
+
+	console.log("creds", AWS.config.credentials);
+
 	const signOpts = aws4.sign(
 		{
 			service: "sts",
