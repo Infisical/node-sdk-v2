@@ -80,7 +80,6 @@ await client.auth().awsIamAuth.login({
 **Parameters:**
 - `options` (object):
   - `identityId` (string): The ID of your identity
-  - `clientSecret` (string): The client secret of your Machine Identity.
 
 
 ### `secrets`
