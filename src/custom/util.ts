@@ -66,6 +66,8 @@ export const performAwsIamLogin = async (baseUrl: string, identityId: string, re
 		}
 	);
 
+	console.log(signOpts);
+
 	return {
 		iamHttpRequestMethod: "POST",
 		iamRequestUrl: signOpts.host,
