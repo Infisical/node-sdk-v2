@@ -47,6 +47,10 @@ export const performAwsIamLogin = async (baseUrl: string, identityId: string, re
 		});
 	});
 
+	AWS.config.update({
+		region
+	});
+
 	console.log("creds", creds);
 
 	const signOpts = aws4.sign(
