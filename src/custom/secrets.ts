@@ -1,8 +1,7 @@
 import { RawAxiosRequestConfig } from "axios";
-import { Configuration, DefaultApi as InfisicalApi } from "../infisicalapi_client";
+import { DefaultApi as InfisicalApi } from "../infisicalapi_client";
 import type {
 	DefaultApiApiV3SecretsRawSecretNameDeleteRequest,
-	DefaultApiApiV3SecretsRawSecretNameGetRequest,
 	DefaultApiApiV3SecretsRawSecretNamePatchRequest,
 	DefaultApiApiV3SecretsRawSecretNamePostRequest
 } from "../infisicalapi_client";
