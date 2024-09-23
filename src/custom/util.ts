@@ -34,6 +34,10 @@ export const getAwsRegion = async () => {
 export const performAwsIamLogin = async (baseUrl: string, identityId: string, region: string) => {
 	const body = "Action=GetCallerIdentity&Version=2011-06-15";
 
+	AWS.config.update({
+		region
+	});
+
 	const creds = await new Promise<{ sessionToken?: string; accessKeyId: string; secretAccessKey: string }>((resolve, reject) => {
 		AWS.config.getCredentials((err, res) => {
 			if (err) {
@@ -47,10 +51,6 @@ export const performAwsIamLogin = async (baseUrl: string, identityId: string, re
 		});
 	});
 
-	AWS.config.update({
-		region
-	});
-
 	console.log("creds", creds);
 
 	const signOpts = aws4.sign(
@@ -61,7 +61,8 @@ export const performAwsIamLogin = async (baseUrl: string, identityId: string, re
 		},
 		{
 			accessKeyId: creds.accessKeyId,
-			secretAccessKey: creds.secretAccessKey
+			secretAccessKey: creds.secretAccessKey,
+			sessionToken: creds.sessionToken
 		}
 	);
 
