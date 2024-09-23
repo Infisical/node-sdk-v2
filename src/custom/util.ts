@@ -9,9 +9,7 @@ export const getAwsRegion = async () => {
 	}
 
 	try {
-		const timeout = 1000;
-
-		const tokenRes = await axios.put(AWS_TOKEN_METADATA_URI, {
+		const tokenRes = await axios.put(AWS_TOKEN_METADATA_URI, undefined, {
 			headers: {
 				"X-aws-ec2-metadata-token-ttl-seconds": "21600"
 			},
@@ -23,7 +21,7 @@ export const getAwsRegion = async () => {
 				"X-aws-ec2-metadata-token": tokenRes.data,
 				Accept: "application/json"
 			},
-			timeout: timeout
+			timeout: 5_000
 		});
 
 		return identityResponse.data.region;
