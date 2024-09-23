@@ -25,6 +25,7 @@ export default class DynamicSecretsClient {
 	async create(options: CreateDynamicSecretOptions) {
 		const res = await this.#apiInstance.apiV1DynamicSecretsPost(
 			{
+				// @ts-ignore
 				apiV1DynamicSecretsPostRequest: options as DefaultApiApiV1DynamicSecretsPostRequest["apiV1DynamicSecretsPostRequest"]
 			},
 			this.#requestOptions
