@@ -11,14 +11,14 @@ type AwsAuthLoginOptions = {
 };
 
 export default class AuthClient {
-	sdkAuthenticator: AuthenticatorFunction;
-	apiClient: InfisicalApi;
-	baseUrl: string;
+	#sdkAuthenticator: AuthenticatorFunction;
+	#apiClient: InfisicalApi;
+	#baseUrl: string;
 
 	constructor(authenticator: AuthenticatorFunction, apiInstance: InfisicalApi, baseUrl: string) {
-		this.sdkAuthenticator = authenticator;
-		this.apiClient = apiInstance;
-		this.baseUrl = baseUrl;
+		this.#sdkAuthenticator = authenticator;
+		this.#apiClient = apiInstance;
+		this.#baseUrl = baseUrl;
 	}
 
 	awsIamAuth = {
@@ -31,7 +31,7 @@ export default class AuthClient {
 
 			const iamRequest = await performAwsIamLogin(await getAwsRegion());
 
-			const res = await this.apiClient.apiV1AuthAwsAuthLoginPost({
+			const res = await this.#apiClient.apiV1AuthAwsAuthLoginPost({
 				apiV1AuthAwsAuthLoginPostRequest: {
 					iamHttpRequestMethod: iamRequest.iamHttpRequestMethod,
 					iamRequestBody: Buffer.from(iamRequest.iamRequestBody).toString("base64"),
@@ -40,21 +40,21 @@ export default class AuthClient {
 				}
 			});
 
-			return this.sdkAuthenticator(res.data.accessToken);
+			return this.#sdkAuthenticator(res.data.accessToken);
 		}
 	};
 
 	universalAuth = {
 		login: async (options: ApiV1AuthUniversalAuthLoginPostRequest) => {
-			const res = await this.apiClient.apiV1AuthUniversalAuthLoginPost({
+			const res = await this.#apiClient.apiV1AuthUniversalAuthLoginPost({
 				apiV1AuthUniversalAuthLoginPostRequest: options
 			});
 
-			return this.sdkAuthenticator(res.data.accessToken);
+			return this.#sdkAuthenticator(res.data.accessToken);
 		}
 	};
 
 	accessToken = (token: string) => {
-		return this.sdkAuthenticator(token);
+		return this.#sdkAuthenticator(token);
 	};
 }
