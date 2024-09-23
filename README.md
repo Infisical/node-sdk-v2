@@ -57,7 +57,9 @@ await client.auth().universalAuth.login({
   - `clientSecret` (string): The client secret of your Machine Identity.
 
 
-#### Plain Access Token
+#### Manually set access token
+By default, when you run a successful `.login()` method call, the access token returned will be auto set for the client instance. However, if you wish to set the access token manually, you may use this method.
+
 ```typescript
 client.auth().accessToken("<your-access-token>")
 ```
