@@ -23,8 +23,8 @@ export default class AuthClient {
 	}
 
 	awsIamAuth = {
-		login: async (options: AwsAuthLoginOptions) => {
-			const identityId = options.identityId || process.env[MACHINE_IDENTITY_ID_ENV_NAME];
+		login: async (options?: AwsAuthLoginOptions) => {
+			const identityId = options?.identityId || process.env[MACHINE_IDENTITY_ID_ENV_NAME];
 
 			if (!identityId) {
 				throw new Error("Identity ID is required for AWS IAM authentication");

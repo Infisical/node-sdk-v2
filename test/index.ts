@@ -1,17 +1,14 @@
-import { AxiosError } from "axios";
 import { InfisicalSDK } from "../src";
 
-const PROJECT_ID = "PROJECT_ID";
+const PROJECT_ID = "65a02bdfa77d9b8197956da1";
 
 (async () => {
 	const client = new InfisicalSDK({
 		siteUrl: "http://localhost:8080" // Optional, defaults to https://app.infisical.com
 	});
 
-	await client.auth().universalAuth.login({
-		// For localhost
-		clientId: "CLIENT_ID",
-		clientSecret: "CLIENT_SECRET"
+	await client.auth().awsIamAuth.login({
+		identityId: "84b548bf-6556-40f6-9ef9-838708fae049"
 	});
 
 	const allSecrets = await client.secrets().listSecrets({
