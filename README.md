@@ -67,6 +67,10 @@ client.auth().accessToken("<your-access-token>")
 
 
 #### AWS IAM
+
+> [!NOTE]   
+> AWS IAM auth only works when the SDK is being used from within an AWS service, such as Lambda, EC2, etc.
+
 ```typescript
 await client.auth().awsIamAuth.login({
   identityId: "<your-identity-id>"
@@ -77,10 +81,6 @@ await client.auth().awsIamAuth.login({
 - `options` (object):
   - `identityId` (string): The ID of your identity
   - `clientSecret` (string): The client secret of your Machine Identity.
-
-
-> [!NOTE]   
-> AWS IAM auth only works when the SDK is being used from within an AWS service, such as Lambda, EC2, etc.
 
 
 ### `secrets`
