@@ -31,9 +31,7 @@ export const getAwsRegion = async () => {
 	}
 };
 
-export const performAwsIamLogin = async (baseUrl: string, identityId: string, region: string) => {
-	const body = "Action=GetCallerIdentity&Version=2011-06-15";
-
+export const performAwsIamLogin = async (region: string) => {
 	AWS.config.update({
 		region
 	});

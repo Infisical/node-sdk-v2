@@ -30,7 +30,7 @@ export default class AuthClient {
 				throw new Error("Identity ID is required for AWS IAM authentication");
 			}
 
-			const iamRequest = await performAwsIamLogin(this.baseUrl, identityId, await getAwsRegion());
+			const iamRequest = await performAwsIamLogin(await getAwsRegion());
 
 			const res = await this.apiClient.apiV1AuthAwsAuthLoginPost({
 				apiV1AuthAwsAuthLoginPostRequest: {
