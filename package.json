@@ -27,14 +27,12 @@
   "description": "",
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "^2.13.5",
-    "@types/aws4": "^1.11.6",
     "@types/node": "^22.5.1",
     "tsc": "^2.0.4",
     "tsup": "^8.2.4"
   },
   "dependencies": {
     "aws-sdk": "2.1311.0",
-    "aws4": "^1.13.2",
     "axios": "^1.7.5",
     "typescript": "^5.5.4",
     "zod": "^3.23.8"
