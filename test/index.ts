@@ -1,14 +1,15 @@
 import { InfisicalSDK } from "../src";
 
-const PROJECT_ID = "65a02bdfa77d9b8197956da1";
+const PROJECT_ID = "PROJECT_ID";
 
 (async () => {
 	const client = new InfisicalSDK({
 		siteUrl: "http://localhost:8080" // Optional, defaults to https://app.infisical.com
 	});
 
-	await client.auth().awsIamAuth.login({
-		identityId: "84b548bf-6556-40f6-9ef9-838708fae049"
+	await client.auth().universalAuth.login({
+		clientId: "CLIENT_ID",
+		clientSecret: "CLIENT_SECRET"
 	});
 
 	const allSecrets = await client.secrets().listSecrets({
