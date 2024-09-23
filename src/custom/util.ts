@@ -67,7 +67,7 @@ export const performAwsIamLogin = async (baseUrl: string, identityId: string, re
 	);
 
 	delete signOpts.headers?.host;
-
+	delete signOpts.headers?.Host;
 	const headers = {
 		...signOpts.headers
 	};
