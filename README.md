@@ -51,6 +51,38 @@ await client.auth().universalAuth.login({
 });
 ```
 
+**Parameters:**
+- `options` (object):
+  - `clientId` (string): The client ID of your Machine Identity.
+  - `clientSecret` (string): The client secret of your Machine Identity.
+
+
+#### Manually set access token
+By default, when you run a successful `.login()` method call, the access token returned will be auto set for the client instance. However, if you wish to set the access token manually, you may use this method.
+
+```typescript
+client.auth().accessToken("<your-access-token>")
+```
+
+**Parameters:**
+- `accessToken` (string): The access token to be used for authentication. _This should not include "Bearer"._
+
+
+#### AWS IAM
+
+> [!NOTE]   
+> AWS IAM auth only works when the SDK is being used from within an AWS service, such as Lambda, EC2, etc.
+
+```typescript
+await client.auth().awsIamAuth.login({
+  identityId: "<your-identity-id>"
+})
+```
+
+**Parameters:**
+- `options` (object):
+  - `identityId` (string): The ID of your identity
+
 
 ### `secrets`
 

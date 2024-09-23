@@ -1,4 +1,3 @@
-import { AxiosError } from "axios";
 import { InfisicalSDK } from "../src";
 
 const PROJECT_ID = "PROJECT_ID";
@@ -9,28 +8,9 @@ const PROJECT_ID = "PROJECT_ID";
 	});
 
 	await client.auth().universalAuth.login({
-		// For localhost
 		clientId: "CLIENT_ID",
 		clientSecret: "CLIENT_SECRET"
 	});
-
-	const dynamicSecret = await client
-		.dynamicSecrets()
-		.leases.create({
-			dynamicSecretName: "test-redis",
-			projectSlug: "11-w-hfo",
-			environmentSlug: "dev"
-		})
-		.catch(err => {
-			if (err instanceof AxiosError) {
-				console.log(err.response?.data);
-			}
-			throw new Error("oops");
-		});
-
-	console.log(dynamicSecret);
-
-	// // process.exit(0);
 
 	const allSecrets = await client.secrets().listSecrets({
 		environment: "dev",

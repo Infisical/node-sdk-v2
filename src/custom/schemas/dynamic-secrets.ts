@@ -157,6 +157,14 @@ export const DynamicSecretMongoDBSchema = z.object({
 		)
 });
 
+export const AzureEntraIDSchema = z.object({
+	tenantId: z.string().trim().min(1),
+	userId: z.string().trim().min(1),
+	email: z.string().trim().min(1),
+	applicationId: z.string().trim().min(1),
+	clientSecret: z.string().trim().min(1)
+});
+
 export enum DynamicSecretProviders {
 	SqlDatabase = "sql-database",
 	Cassandra = "cassandra",
@@ -166,7 +174,8 @@ export enum DynamicSecretProviders {
 	MongoAtlas = "mongo-db-atlas",
 	ElasticSearch = "elastic-search",
 	MongoDB = "mongo-db",
-	RabbitMq = "rabbit-mq"
+	RabbitMq = "rabbit-mq",
+	AzureEntraID = "azure-entra-id"
 }
 
 export const DynamicSecretProviderSchema = z.discriminatedUnion("type", [
@@ -178,7 +187,8 @@ export const DynamicSecretProviderSchema = z.discriminatedUnion("type", [
 	z.object({ type: z.literal(DynamicSecretProviders.MongoAtlas), inputs: DynamicSecretMongoAtlasSchema }),
 	z.object({ type: z.literal(DynamicSecretProviders.ElasticSearch), inputs: DynamicSecretElasticSearchSchema }),
 	z.object({ type: z.literal(DynamicSecretProviders.MongoDB), inputs: DynamicSecretMongoDBSchema }),
-	z.object({ type: z.literal(DynamicSecretProviders.RabbitMq), inputs: DynamicSecretRabbitMqSchema })
+	z.object({ type: z.literal(DynamicSecretProviders.RabbitMq), inputs: DynamicSecretRabbitMqSchema }),
+	z.object({ type: z.literal(DynamicSecretProviders.AzureEntraID), inputs: AzureEntraIDSchema })
 ]);
 
 export type TDynamicSecretProvider = z.infer<typeof DynamicSecretProviderSchema>;

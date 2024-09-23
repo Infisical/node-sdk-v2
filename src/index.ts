@@ -38,7 +38,7 @@ class InfisicalSDK {
 			})
 		);
 
-		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance);
+		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance, this.#basePath);
 		this.#dynamicSecretsClient = new DynamicSecretsClient(this.#apiInstance, this.#requestOptions);
 		this.#secretsClient = new SecretsClient(this.#apiInstance, this.#requestOptions);
 		this.rest = () => buildRestClient(this.#apiInstance, this.#requestOptions);
@@ -61,7 +61,7 @@ class InfisicalSDK {
 		this.rest = () => buildRestClient(this.#apiInstance, this.#requestOptions);
 		this.#secretsClient = new SecretsClient(this.#apiInstance, this.#requestOptions);
 		this.#dynamicSecretsClient = new DynamicSecretsClient(this.#apiInstance, this.#requestOptions);
-		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance);
+		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance, this.#basePath);
 
 		return this;
 	}
