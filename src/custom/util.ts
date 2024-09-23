@@ -11,7 +11,7 @@ export const getAwsRegion = async () => {
 	try {
 		const timeout = 1000;
 
-		const tokenRes = await axios.get(AWS_TOKEN_METADATA_URI, {
+		const tokenRes = await axios.put(AWS_TOKEN_METADATA_URI, {
 			headers: {
 				"X-aws-ec2-metadata-token-ttl-seconds": "21600"
 			},
