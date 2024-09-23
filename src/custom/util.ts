@@ -71,8 +71,8 @@ export const performAwsIamLogin = async (region: string) => {
 
 	return {
 		iamHttpRequestMethod: "POST",
-		iamRequestUrl: Buffer.from(iamRequestURL).toString("base64"),
-		iamRequestBody: Buffer.from(iamRequestBody).toString("base64"),
-		iamRequestHeaders: Buffer.from(JSON.stringify(iamRequestHeaders)).toString("base64")
+		iamRequestUrl: iamRequestURL,
+		iamRequestBody: iamRequestBody,
+		iamRequestHeaders: iamRequestHeaders
 	} as const;
 };
