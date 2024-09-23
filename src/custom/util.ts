@@ -66,21 +66,15 @@ export const performAwsIamLogin = async (baseUrl: string, identityId: string, re
 		}
 	);
 
-	let host = (signOpts as any)["Host"];
-	if (signOpts as any["Host"]) {
-		host = `${(signOpts as any)["Host"].replace(".sts", `.sts.${region}.`)}`;
-	}
+	delete signOpts.headers?.host;
 
-	console.log(signOpts);
-	console.log("host", host);
 	const headers = {
-		...signOpts.headers,
-		host
+		...signOpts.headers
 	};
 	return {
 		iamHttpRequestMethod: "POST",
 		iamRequestUrl: signOpts.host,
 		iamRequestBody: body,
-		iamRequestHeaders: signOpts.headers
+		iamRequestHeaders: headers
 	} as const;
 };
