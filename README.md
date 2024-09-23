@@ -51,6 +51,37 @@ await client.auth().universalAuth.login({
 });
 ```
 
+**Parameters:**
+- `options` (object):
+  - `clientId` (string): The client ID of your Machine Identity.
+  - `clientSecret` (string): The client secret of your Machine Identity.
+
+
+#### Plain Access Token
+```typescript
+client.auth().accessToken("<your-access-token>")
+```
+
+**Parameters:**
+- `accessToken` (string): The access token to be used for authentication. _This should not include "Bearer"._
+
+
+#### AWS IAM
+```typescript
+await client.auth().awsIamAuth.login({
+  identityId: "<your-identity-id>"
+})
+```
+
+**Parameters:**
+- `options` (object):
+  - `identityId` (string): The ID of your identity
+  - `clientSecret` (string): The client secret of your Machine Identity.
+
+
+> [!NOTE]   
+> AWS IAM auth only works when the SDK is being used from within an AWS service, such as Lambda, EC2, etc.
+
 
 ### `secrets`
 
