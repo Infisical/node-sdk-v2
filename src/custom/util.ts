@@ -1,6 +1,7 @@
 import axios from "axios";
 import { AWS_IDENTITY_DOCUMENT_URI, AWS_TOKEN_METADATA_URI } from "./constants";
 import AWS from "aws-sdk";
+import { InfisicalSDKError } from "./errors";
 
 export const getAwsRegion = async () => {
 	const region = process.env.AWS_REGION; // Typically found in lambda runtime environment
@@ -36,13 +37,13 @@ export const performAwsIamLogin = async (region: string) => {
 		region
 	});
 
-	const creds = await new Promise<{ sessionToken?: string; accessKeyId: string; secretAccessKey: string }>((resolve, reject) => {
+	await new Promise<{ sessionToken?: string; accessKeyId: string; secretAccessKey: string }>((resolve, reject) => {
 		AWS.config.getCredentials((err, res) => {
 			if (err) {
 				throw err;
 			} else {
 				if (!res) {
-					throw new Error("Credentials not found");
+					throw new InfisicalSDKError("Credentials not found");
 				}
 				return resolve(res);
 			}
