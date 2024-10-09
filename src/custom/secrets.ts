@@ -5,6 +5,7 @@ import type {
 	DefaultApiApiV3SecretsRawSecretNamePatchRequest,
 	DefaultApiApiV3SecretsRawSecretNamePostRequest
 } from "../infisicalapi_client";
+import { newInfisicalError } from "./errors";
 
 type SecretType = "shared" | "personal";
 
@@ -51,77 +52,97 @@ export default class SecretsClient {
 	}
 
 	listSecrets = async (options: ListSecretsOptions) => {
-		const res = await this.#apiInstance.apiV3SecretsRawGet(
-			{
-				environment: options.environment,
-				workspaceId: options.projectId,
-				expandSecretReferences: convertBool(options.expandSecretReferences),
-				includeImports: convertBool(options.includeImports),
-				recursive: convertBool(options.recursive),
-				secretPath: options.secretPath,
-				tagSlugs: options.tagSlugs ? options.tagSlugs.join(",") : undefined
-			},
-			this.#requestOptions
-		);
-		return res.data;
+		try {
+			const res = await this.#apiInstance.apiV3SecretsRawGet(
+				{
+					environment: options.environment,
+					workspaceId: options.projectId,
+					expandSecretReferences: convertBool(options.expandSecretReferences),
+					includeImports: convertBool(options.includeImports),
+					recursive: convertBool(options.recursive),
+					secretPath: options.secretPath,
+					tagSlugs: options.tagSlugs ? options.tagSlugs.join(",") : undefined
+				},
+				this.#requestOptions
+			);
+			return res.data;
+		} catch (err) {
+			throw newInfisicalError(err);
+		}
 	};
 
 	getSecret = async (options: GetSecretOptions) => {
-		const res = await this.#apiInstance.apiV3SecretsRawSecretNameGet(
-			{
-				environment: options.environment,
-				secretName: options.secretName,
-				workspaceId: options.projectId,
-				expandSecretReferences: convertBool(options.expandSecretReferences),
-				includeImports: convertBool(options.includeImports),
-				secretPath: options.secretPath,
-				type: options.type,
-				version: options.version
-			},
-			this.#requestOptions
-		);
-		return res.data.secret;
+		try {
+			const res = await this.#apiInstance.apiV3SecretsRawSecretNameGet(
+				{
+					environment: options.environment,
+					secretName: options.secretName,
+					workspaceId: options.projectId,
+					expandSecretReferences: convertBool(options.expandSecretReferences),
+					includeImports: convertBool(options.includeImports),
+					secretPath: options.secretPath,
+					type: options.type,
+					version: options.version
+				},
+				this.#requestOptions
+			);
+			return res.data.secret;
+		} catch (err) {
+			throw newInfisicalError(err);
+		}
 	};
 
 	updateSecret = async (secretName: DefaultApiApiV3SecretsRawSecretNamePatchRequest["secretName"], options: UpdateSecretOptions) => {
-		const res = await this.#apiInstance.apiV3SecretsRawSecretNamePatch(
-			{
-				secretName,
-				apiV3SecretsRawSecretNamePatchRequest: {
-					...options,
-					workspaceId: options.projectId
-				}
-			},
-			this.#requestOptions
-		);
-		return res.data;
+		try {
+			const res = await this.#apiInstance.apiV3SecretsRawSecretNamePatch(
+				{
+					secretName,
+					apiV3SecretsRawSecretNamePatchRequest: {
+						...options,
+						workspaceId: options.projectId
+					}
+				},
+				this.#requestOptions
+			);
+			return res.data;
+		} catch (err) {
+			throw newInfisicalError(err);
+		}
 	};
 
 	createSecret = async (secretName: DefaultApiApiV3SecretsRawSecretNamePostRequest["secretName"], options: CreateSecretOptions) => {
-		const res = await this.#apiInstance.apiV3SecretsRawSecretNamePost(
-			{
-				secretName,
-				apiV3SecretsRawSecretNamePostRequest: {
-					...options,
-					workspaceId: options.projectId
-				}
-			},
-			this.#requestOptions
-		);
-		return res.data;
+		try {
+			const res = await this.#apiInstance.apiV3SecretsRawSecretNamePost(
+				{
+					secretName,
+					apiV3SecretsRawSecretNamePostRequest: {
+						...options,
+						workspaceId: options.projectId
+					}
+				},
+				this.#requestOptions
+			);
+			return res.data;
+		} catch (err) {
+			throw newInfisicalError(err);
+		}
 	};
 
 	deleteSecret = async (secretName: DefaultApiApiV3SecretsRawSecretNameDeleteRequest["secretName"], options: DeleteSecretOptions) => {
-		const res = await this.#apiInstance.apiV3SecretsRawSecretNameDelete(
-			{
-				secretName,
-				apiV3SecretsRawSecretNameDeleteRequest: {
-					...options,
-					workspaceId: options.projectId
-				}
-			},
-			this.#requestOptions
-		);
-		return res.data;
+		try {
+			const res = await this.#apiInstance.apiV3SecretsRawSecretNameDelete(
+				{
+					secretName,
+					apiV3SecretsRawSecretNameDeleteRequest: {
+						...options,
+						workspaceId: options.projectId
+					}
+				},
+				this.#requestOptions
+			);
+			return res.data;
+		} catch (err) {
+			throw newInfisicalError(err);
+		}
 	};
 }
