@@ -14,7 +14,8 @@ npm install @infisical/sdk
 import { InfisicalSDK } from '@infisical/sdk'
 
 const client = new InfisicalSDK({
-  siteUrl: "your-infisical-instance.com" // Optional, defaults to https://app.infisical.com
+  siteUrl: "your-infisical-instance.com", // Optional, defaults to https://app.infisical.com
+  autoTokenRefresh: false // Optional, defaults to true
 });
 
 // Authenticate with Infisical
@@ -30,6 +31,18 @@ const allSecrets = await client.secrets().listSecrets({
 
 console.log("Fetched secrets", allSecrets)
 ```
+
+#### SDK Initialization
+```typescript
+const client = new InfisicalSDK({
+  siteUrl: "your-infisical-instance.com",
+  autoTokenRefresh: false
+});
+```
+**Parameters:**
+- `options` (object):
+  - `siteUrl` (string, optional): Optionally provide a URL to your own Infisical instance. Defaults to `https://app.infisical.com`
+  - `autoTokenRefresh` (boolean, optional): Whether to automatically refresh the access token when it expires. Defaults to `true`.
 
 ## Core Methods
 

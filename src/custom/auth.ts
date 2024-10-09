@@ -1,44 +1,49 @@
 import { InfisicalSDK } from "..";
 import { ApiV1AuthUniversalAuthLoginPostRequest } from "../infisicalapi_client";
 import { DefaultApi as InfisicalApi } from "../infisicalapi_client";
+import { AuthMethod, TAuthCredentials, TTokenDetails } from "../types";
 import { MACHINE_IDENTITY_ID_ENV_NAME } from "./constants";
 import { InfisicalError, newInfisicalError } from "./errors";
 import { getAwsRegion, performAwsIamLogin } from "./util";
 
-type AuthenticatorFunction = (accessToken: string) => InfisicalSDK;
+type TAuthenticator = {
+	authenticate: (tokenDetails: Omit<TTokenDetails, "fetchedTime" | "firstFetchTime">) => Promise<InfisicalSDK>;
+	setCredentials: (credentials: TAuthCredentials) => void;
+};
 
 type AwsAuthLoginOptions = {
 	identityId?: string;
 };
 
+export const renewToken = async (apiClient: InfisicalApi, token?: string) => {
+	try {
+		if (!token) {
+			throw new InfisicalError("Unable to renew access token, no access token set. Are you sure you're authenticated?");
+		}
+
+		const res = await apiClient.apiV1AuthTokenRenewPost({
+			apiV1AuthTokenRenewPostRequest: {
+				accessToken: token
+			}
+		});
+
+		return res.data;
+	} catch (err) {
+		throw newInfisicalError(err);
+	}
+};
+
 export default class AuthClient {
-	#sdkAuthenticator: AuthenticatorFunction;
+	#authenticator: TAuthenticator;
 	#apiClient: InfisicalApi;
 	#accessToken: string | undefined;
+	#credentials: TAuthCredentials | undefined;
 
-	constructor(authenticator: AuthenticatorFunction, apiInstance: InfisicalApi, accessToken?: string) {
-		this.#sdkAuthenticator = authenticator;
+	constructor(authenticator: TAuthenticator, apiInstance: InfisicalApi, accessToken?: string) {
+		this.#authenticator = authenticator;
 		this.#apiClient = apiInstance;
 		this.#accessToken = accessToken;
 	}
-
-	#renewToken = async () => {
-		try {
-			if (!this.#accessToken) {
-				throw new InfisicalError("Unable to renew access token, no access token set. Are you sure you're authenticated?");
-			}
-
-			const res = await this.#apiClient.apiV1AuthTokenRenewPost({
-				apiV1AuthTokenRenewPostRequest: {
-					accessToken: this.#accessToken
-				}
-			});
-
-			return res.data.accessToken;
-		} catch (err) {
-			throw newInfisicalError(err);
-		}
-	};
 
 	awsIamAuth = {
 		login: async (options?: AwsAuthLoginOptions) => {
@@ -46,7 +51,7 @@ export default class AuthClient {
 				const identityId = options?.identityId || process.env[MACHINE_IDENTITY_ID_ENV_NAME];
 
 				if (!identityId) {
-					throw new Error("Identity ID is required for AWS IAM authentication");
+					throw new InfisicalError("Identity ID is required for AWS IAM authentication");
 				}
 
 				const iamRequest = await performAwsIamLogin(await getAwsRegion());
@@ -60,7 +65,13 @@ export default class AuthClient {
 					}
 				});
 
-				return this.#sdkAuthenticator(res.data.accessToken);
+				this.#authenticator.setCredentials({
+					type: AuthMethod.AWSIam,
+					credentials: {
+						identityId
+					}
+				});
+				return this.#authenticator.authenticate(res.data);
 			} catch (err) {
 				throw newInfisicalError(err);
 			}
@@ -68,8 +79,8 @@ export default class AuthClient {
 
 		renew: async () => {
 			try {
-				const refreshedToken = await this.#renewToken();
-				return this.#sdkAuthenticator(refreshedToken);
+				const refreshedToken = await renewToken(this.#apiClient, this.#accessToken);
+				return this.#authenticator.authenticate(refreshedToken);
 			} catch (err) {
 				throw newInfisicalError(err);
 			}
@@ -83,7 +94,14 @@ export default class AuthClient {
 					apiV1AuthUniversalAuthLoginPostRequest: options
 				});
 
-				return this.#sdkAuthenticator(res.data.accessToken);
+				this.#authenticator.setCredentials({
+					type: AuthMethod.UniversalAuth,
+					credentials: {
+						clientId: options.clientId,
+						clientSecret: options.clientSecret
+					}
+				});
+				return this.#authenticator.authenticate(res.data);
 			} catch (err) {
 				throw newInfisicalError(err);
 			}
@@ -91,15 +109,26 @@ export default class AuthClient {
 
 		renew: async () => {
 			try {
-				const refreshedToken = await this.#renewToken();
-				return this.#sdkAuthenticator(refreshedToken);
+				const refreshedToken = await renewToken(this.#apiClient, this.#accessToken);
+				return this.#authenticator.authenticate(refreshedToken);
 			} catch (err) {
 				throw newInfisicalError(err);
 			}
 		}
 	};
 
-	accessToken = (token: string) => {
-		return this.#sdkAuthenticator(token);
+	accessToken = async (token: string) => {
+		try {
+			const tokenData = await renewToken(this.#apiClient, token);
+			this.#authenticator.setCredentials({
+				type: AuthMethod.AccessToken,
+				credentials: {
+					accessToken: token
+				}
+			});
+			return this.#authenticator.authenticate(tokenData);
+		} catch (err) {
+			throw newInfisicalError(err);
+		}
 	};
 }
