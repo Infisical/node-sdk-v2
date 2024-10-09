@@ -9,7 +9,7 @@ export class InfisicalError extends Error {
 	constructor(message: string) {
 		super(message);
 		this.message = message;
-		this.name = "InfisicalError";
+		this.name = "InfisicalSDKError";
 	}
 }
 
@@ -24,7 +24,7 @@ export class InfisicalRequestError extends Error {
 	) {
 		super(message);
 		this.message = `[URL=${requestData.url}] [Method=${requestData.method}] [StatusCode=${requestData.statusCode}] ${message}`;
-		this.name = "InfisicalRequestError";
+		this.name = "InfisicalSDKRequestError";
 	}
 }
 
