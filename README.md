@@ -14,7 +14,8 @@ npm install @infisical/sdk
 import { InfisicalSDK } from '@infisical/sdk'
 
 const client = new InfisicalSDK({
-  siteUrl: "your-infisical-instance.com" // Optional, defaults to https://app.infisical.com
+  siteUrl: "your-infisical-instance.com", // Optional, defaults to https://app.infisical.com
+  autoTokenRefresh: false // Optional, defaults to true
 });
 
 // Authenticate with Infisical
@@ -31,6 +32,18 @@ const allSecrets = await client.secrets().listSecrets({
 console.log("Fetched secrets", allSecrets)
 ```
 
+#### SDK Initialization
+```typescript
+const client = new InfisicalSDK({
+  siteUrl: "your-infisical-instance.com",
+  autoTokenRefresh: false
+});
+```
+**Parameters:**
+- `options` (object):
+  - `siteUrl` (string, optional): Optionally provide a URL to your own Infisical instance. Defaults to `https://app.infisical.com`
+  - `autoTokenRefresh` (boolean, optional): Whether to automatically refresh the access token when it expires. Defaults to `true`.
+
 ## Core Methods
 
 The SDK methods are organized into the following high-level categories:
@@ -44,6 +57,7 @@ The `Auth` component provides methods for authentication:
 
 #### Universal Auth
 
+#### Authenticating
 ```typescript
 await client.auth().universalAuth.login({
   clientId: "<machine-identity-client-id>",
@@ -55,6 +69,12 @@ await client.auth().universalAuth.login({
 - `options` (object):
   - `clientId` (string): The client ID of your Machine Identity.
   - `clientSecret` (string): The client secret of your Machine Identity.
+
+#### Renewing
+You can renew the authentication token that is currently set by using the `renew()` method.
+```typescript
+await client.auth().universalAuth.renew();
+```
 
 
 #### Manually set access token
@@ -73,6 +93,7 @@ client.auth().accessToken("<your-access-token>")
 > [!NOTE]   
 > AWS IAM auth only works when the SDK is being used from within an AWS service, such as Lambda, EC2, etc.
 
+#### Authenticating
 ```typescript
 await client.auth().awsIamAuth.login({
   identityId: "<your-identity-id>"
@@ -82,6 +103,12 @@ await client.auth().awsIamAuth.login({
 **Parameters:**
 - `options` (object):
   - `identityId` (string): The ID of your identity
+
+#### Renewing
+You can renew the authentication token that is currently set by using the `renew()` method.
+```typescript
+await client.auth().awsIamAuth.renew();
+```
 
 
 ### `secrets`
