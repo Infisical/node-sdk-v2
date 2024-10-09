@@ -28,6 +28,7 @@ class InfisicalSDK {
 	#dynamicSecretsClient: DynamicSecretsClient;
 	#authClient: AuthClient;
 	#basePath: string;
+	#accessToken: string | undefined;
 
 	constructor(options?: InfisicalSDKOptions) {
 		this.#basePath = options?.siteUrl || "https://app.infisical.com";
@@ -38,7 +39,7 @@ class InfisicalSDK {
 			})
 		);
 
-		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance, this.#basePath);
+		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance, this.#accessToken);
 		this.#dynamicSecretsClient = new DynamicSecretsClient(this.#apiInstance, this.#requestOptions);
 		this.#secretsClient = new SecretsClient(this.#apiInstance, this.#requestOptions);
 		this.rest = () => buildRestClient(this.#apiInstance, this.#requestOptions);
@@ -52,6 +53,7 @@ class InfisicalSDK {
 			})
 		);
 
+		this.#accessToken = accessToken;
 		this.#requestOptions = {
 			headers: {
 				Authorization: `Bearer ${accessToken}`
@@ -61,7 +63,7 @@ class InfisicalSDK {
 		this.rest = () => buildRestClient(this.#apiInstance, this.#requestOptions);
 		this.#secretsClient = new SecretsClient(this.#apiInstance, this.#requestOptions);
 		this.#dynamicSecretsClient = new DynamicSecretsClient(this.#apiInstance, this.#requestOptions);
-		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance, this.#basePath);
+		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance, this.#accessToken);
 
 		return this;
 	}
