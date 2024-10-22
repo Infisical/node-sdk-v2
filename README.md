@@ -61,7 +61,7 @@ await client.auth().universalAuth.login({
 You can renew the authentication token that is currently set by using the `renew()` method.
 ```typescript
 await client.auth().universalAuth.renew();
-
+```
 
 #### Manually set access token
 By default, when you run a successful `.login()` method call, the access token returned will be auto set for the client instance. However, if you wish to set the access token manually, you may use this method.
