@@ -74,3 +74,5 @@ class InfisicalSDK {
 
 export { InfisicalSDK, ApiClient };
 export * from "./custom/schemas";
+export type * from "./custom/secrets";
+export type * from "./custom/dynamic-secrets";

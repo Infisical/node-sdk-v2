@@ -12,7 +12,7 @@ export enum ElasticSearchAuthTypes {
 	ApiKey = "api-key"
 }
 
-export const DynamicSecretRedisDBSchema = z.object({
+const DynamicSecretRedisDBSchema = z.object({
 	host: z.string().trim().toLowerCase(),
 	port: z.number(),
 	username: z.string().trim(), // this is often "default".
@@ -23,7 +23,7 @@ export const DynamicSecretRedisDBSchema = z.object({
 	ca: z.string().optional()
 });
 
-export const DynamicSecretAwsElastiCacheSchema = z.object({
+const DynamicSecretAwsElastiCacheSchema = z.object({
 	clusterName: z.string().trim().min(1),
 	accessKeyId: z.string().trim().min(1),
 	secretAccessKey: z.string().trim().min(1),
@@ -34,7 +34,7 @@ export const DynamicSecretAwsElastiCacheSchema = z.object({
 	ca: z.string().optional()
 });
 
-export const DynamicSecretElasticSearchSchema = z.object({
+const DynamicSecretElasticSearchSchema = z.object({
 	host: z.string().trim().min(1),
 	port: z.number(),
 	roles: z.array(z.string().trim().min(1)).min(1),
@@ -56,7 +56,7 @@ export const DynamicSecretElasticSearchSchema = z.object({
 	ca: z.string().optional()
 });
 
-export const DynamicSecretRabbitMqSchema = z.object({
+const DynamicSecretRabbitMqSchema = z.object({
 	host: z.string().trim().min(1),
 	port: z.number(),
 	tags: z.array(z.string().trim()).default([]),
@@ -76,7 +76,7 @@ export const DynamicSecretRabbitMqSchema = z.object({
 	})
 });
 
-export const DynamicSecretSqlDBSchema = z.object({
+const DynamicSecretSqlDBSchema = z.object({
 	client: z.nativeEnum(SqlProviders),
 	host: z.string().trim().toLowerCase(),
 	port: z.number(),
@@ -89,7 +89,7 @@ export const DynamicSecretSqlDBSchema = z.object({
 	ca: z.string().optional()
 });
 
-export const DynamicSecretCassandraSchema = z.object({
+const DynamicSecretCassandraSchema = z.object({
 	host: z.string().trim().toLowerCase(),
 	port: z.number(),
 	localDataCenter: z.string().trim().min(1),
@@ -102,7 +102,7 @@ export const DynamicSecretCassandraSchema = z.object({
 	ca: z.string().optional()
 });
 
-export const DynamicSecretAwsIamSchema = z.object({
+const DynamicSecretAwsIamSchema = z.object({
 	accessKey: z.string().trim().min(1),
 	secretAccessKey: z.string().trim().min(1),
 	region: z.string().trim().min(1),
@@ -113,7 +113,7 @@ export const DynamicSecretAwsIamSchema = z.object({
 	policyArns: z.string().trim().optional()
 });
 
-export const DynamicSecretMongoAtlasSchema = z.object({
+const DynamicSecretMongoAtlasSchema = z.object({
 	adminPublicKey: z.string().trim().min(1).describe("Admin user public api key"),
 	adminPrivateKey: z.string().trim().min(1).describe("Admin user private api key"),
 	groupId: z.string().trim().min(1).describe("Unique 24-hexadecimal digit string that identifies your project. This is same as project id"),
@@ -141,7 +141,7 @@ export const DynamicSecretMongoAtlasSchema = z.object({
 		.array()
 });
 
-export const DynamicSecretMongoDBSchema = z.object({
+const DynamicSecretMongoDBSchema = z.object({
 	host: z.string().min(1).trim().toLowerCase(),
 	port: z.number().optional(),
 	username: z.string().min(1).trim(),
@@ -157,7 +157,28 @@ export const DynamicSecretMongoDBSchema = z.object({
 		)
 });
 
-export const AzureEntraIDSchema = z.object({
+const DynamicSecretSapHanaSchema = z.object({
+	host: z.string().trim().toLowerCase(),
+	port: z.number(),
+	username: z.string().trim(),
+	password: z.string().trim(),
+	creationStatement: z.string().trim(),
+	revocationStatement: z.string().trim(),
+	renewStatement: z.string().trim().optional(),
+	ca: z.string().optional()
+});
+
+const DynamicSecretSnowflakeSchema = z.object({
+	accountId: z.string().trim().min(1),
+	orgId: z.string().trim().min(1),
+	username: z.string().trim().min(1),
+	password: z.string().trim().min(1),
+	creationStatement: z.string().trim().min(1),
+	revocationStatement: z.string().trim().min(1),
+	renewStatement: z.string().trim().optional()
+});
+
+const AzureEntraIDSchema = z.object({
 	tenantId: z.string().trim().min(1),
 	userId: z.string().trim().min(1),
 	email: z.string().trim().min(1),
@@ -165,7 +186,7 @@ export const AzureEntraIDSchema = z.object({
 	clientSecret: z.string().trim().min(1)
 });
 
-export const LdapSchema = z.object({
+const LdapSchema = z.object({
 	url: z.string().trim().min(1),
 	binddn: z.string().trim().min(1),
 	bindpass: z.string().trim().min(1),
@@ -187,21 +208,25 @@ export enum DynamicSecretProviders {
 	MongoDB = "mongo-db",
 	RabbitMq = "rabbit-mq",
 	AzureEntraID = "azure-entra-id",
-	Ldap = "ldap"
+	Ldap = "ldap",
+	SapHana = "sap-hana",
+	Snowflake = "snowflake"
 }
 
-export const DynamicSecretProviderSchema = z.discriminatedUnion("type", [
+const DynamicSecretProviderSchema = z.discriminatedUnion("type", [
 	z.object({ type: z.literal(DynamicSecretProviders.SqlDatabase), inputs: DynamicSecretSqlDBSchema }),
 	z.object({ type: z.literal(DynamicSecretProviders.Cassandra), inputs: DynamicSecretCassandraSchema }),
 	z.object({ type: z.literal(DynamicSecretProviders.AwsIam), inputs: DynamicSecretAwsIamSchema }),
 	z.object({ type: z.literal(DynamicSecretProviders.Redis), inputs: DynamicSecretRedisDBSchema }),
+	z.object({ type: z.literal(DynamicSecretProviders.SapHana), inputs: DynamicSecretSapHanaSchema }),
 	z.object({ type: z.literal(DynamicSecretProviders.AwsElastiCache), inputs: DynamicSecretAwsElastiCacheSchema }),
 	z.object({ type: z.literal(DynamicSecretProviders.MongoAtlas), inputs: DynamicSecretMongoAtlasSchema }),
 	z.object({ type: z.literal(DynamicSecretProviders.ElasticSearch), inputs: DynamicSecretElasticSearchSchema }),
 	z.object({ type: z.literal(DynamicSecretProviders.MongoDB), inputs: DynamicSecretMongoDBSchema }),
 	z.object({ type: z.literal(DynamicSecretProviders.RabbitMq), inputs: DynamicSecretRabbitMqSchema }),
 	z.object({ type: z.literal(DynamicSecretProviders.AzureEntraID), inputs: AzureEntraIDSchema }),
-	z.object({ type: z.literal(DynamicSecretProviders.Ldap), inputs: LdapSchema })
+	z.object({ type: z.literal(DynamicSecretProviders.Ldap), inputs: LdapSchema }),
+	z.object({ type: z.literal(DynamicSecretProviders.Snowflake), inputs: DynamicSecretSnowflakeSchema })
 ]);
 
 export type TDynamicSecretProvider = z.infer<typeof DynamicSecretProviderSchema>;
