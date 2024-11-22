@@ -14,9 +14,15 @@ import type {
 import type { TDynamicSecretProvider } from "./schemas/dynamic-secrets";
 import { newInfisicalError } from "./errors";
 
-type CreateDynamicSecretOptions = Omit<DefaultApiApiV1DynamicSecretsPostRequest["apiV1DynamicSecretsPostRequest"], "provider"> & {
+export type CreateDynamicSecretOptions = Omit<DefaultApiApiV1DynamicSecretsPostRequest["apiV1DynamicSecretsPostRequest"], "provider"> & {
 	provider: TDynamicSecretProvider;
 };
+export type DeleteDynamicSecretOptions = DefaultApiApiV1DynamicSecretsNameDeleteRequest["apiV1DynamicSecretsNameDeleteRequest"];
+export type CreateDynamicSecretLeaseOptions = DefaultApiApiV1DynamicSecretsLeasesPostRequest["apiV1DynamicSecretsLeasesPostRequest"];
+export type DeleteDynamicSecretLeaseOptions =
+	DefaultApiApiV1DynamicSecretsLeasesLeaseIdDeleteRequest["apiV1DynamicSecretsLeasesLeaseIdDeleteRequest"];
+export type RenewDynamicSecretLeaseOptions =
+	DefaultApiApiV1DynamicSecretsLeasesLeaseIdRenewPostRequest["apiV1DynamicSecretsLeasesLeaseIdRenewPostRequest"];
 
 export type CreateDynamicSecretResult = ApiV1DynamicSecretsGet200ResponseDynamicSecretsInner;
 export type DeleteDynamicSecretResult = ApiV1DynamicSecretsGet200ResponseDynamicSecretsInner;
@@ -47,10 +53,7 @@ export default class DynamicSecretsClient {
 		}
 	}
 
-	async delete(
-		dynamicSecretName: string,
-		options: DefaultApiApiV1DynamicSecretsNameDeleteRequest["apiV1DynamicSecretsNameDeleteRequest"]
-	): Promise<DeleteDynamicSecretResult> {
+	async delete(dynamicSecretName: string, options: DeleteDynamicSecretOptions): Promise<DeleteDynamicSecretResult> {
 		try {
 			const res = await this.#apiInstance.apiV1DynamicSecretsNameDelete(
 				{
@@ -67,9 +70,7 @@ export default class DynamicSecretsClient {
 	}
 
 	leases = {
-		create: async (
-			options: DefaultApiApiV1DynamicSecretsLeasesPostRequest["apiV1DynamicSecretsLeasesPostRequest"]
-		): Promise<CreateDynamicSecretLeaseResult> => {
+		create: async (options: CreateDynamicSecretLeaseOptions): Promise<CreateDynamicSecretLeaseResult> => {
 			try {
 				const res = await this.#apiInstance.apiV1DynamicSecretsLeasesPost(
 					{
@@ -83,10 +84,7 @@ export default class DynamicSecretsClient {
 				throw newInfisicalError(err);
 			}
 		},
-		delete: async (
-			leaseId: string,
-			options: DefaultApiApiV1DynamicSecretsLeasesLeaseIdDeleteRequest["apiV1DynamicSecretsLeasesLeaseIdDeleteRequest"]
-		): Promise<DeleteDynamicSecretLeaseResult> => {
+		delete: async (leaseId: string, options: DeleteDynamicSecretLeaseOptions): Promise<DeleteDynamicSecretLeaseResult> => {
 			try {
 				const res = await this.#apiInstance.apiV1DynamicSecretsLeasesLeaseIdDelete(
 					{
@@ -102,10 +100,7 @@ export default class DynamicSecretsClient {
 			}
 		},
 
-		renew: async (
-			leaseId: string,
-			options: DefaultApiApiV1DynamicSecretsLeasesLeaseIdRenewPostRequest["apiV1DynamicSecretsLeasesLeaseIdRenewPostRequest"]
-		): Promise<RenewDynamicSecretLeaseResult> => {
+		renew: async (leaseId: string, options: RenewDynamicSecretLeaseOptions): Promise<RenewDynamicSecretLeaseResult> => {
 			try {
 				const res = await this.#apiInstance.apiV1DynamicSecretsLeasesLeaseIdRenewPost(
 					{
