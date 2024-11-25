@@ -1,6 +1,9 @@
 import { RawAxiosRequestConfig } from "axios";
 import { DefaultApi as InfisicalApi } from "../infisicalapi_client";
 import type {
+	ApiV3SecretsRawGet200Response,
+	ApiV3SecretsRawSecretNameGet200Response,
+	ApiV3SecretsRawSecretNamePost200Response,
 	DefaultApiApiV3SecretsRawSecretNameDeleteRequest,
 	DefaultApiApiV3SecretsRawSecretNamePatchRequest,
 	DefaultApiApiV3SecretsRawSecretNamePostRequest
@@ -30,17 +33,23 @@ type GetSecretOptions = {
 	projectId: string;
 };
 
-type UpdateSecretOptions = Omit<DefaultApiApiV3SecretsRawSecretNamePatchRequest["apiV3SecretsRawSecretNamePatchRequest"], "workspaceId"> & {
+export type UpdateSecretOptions = Omit<DefaultApiApiV3SecretsRawSecretNamePatchRequest["apiV3SecretsRawSecretNamePatchRequest"], "workspaceId"> & {
 	projectId: string;
 };
 
-type CreateSecretOptions = Omit<DefaultApiApiV3SecretsRawSecretNamePostRequest["apiV3SecretsRawSecretNamePostRequest"], "workspaceId"> & {
+export type CreateSecretOptions = Omit<DefaultApiApiV3SecretsRawSecretNamePostRequest["apiV3SecretsRawSecretNamePostRequest"], "workspaceId"> & {
 	projectId: string;
 };
 
-type DeleteSecretOptions = Omit<DefaultApiApiV3SecretsRawSecretNameDeleteRequest["apiV3SecretsRawSecretNameDeleteRequest"], "workspaceId"> & {
+export type DeleteSecretOptions = Omit<DefaultApiApiV3SecretsRawSecretNameDeleteRequest["apiV3SecretsRawSecretNameDeleteRequest"], "workspaceId"> & {
 	projectId: string;
 };
+
+export type ListSecretsResult = ApiV3SecretsRawGet200Response;
+export type GetSecretResult = ApiV3SecretsRawSecretNameGet200Response["secret"];
+export type UpdateSecretResult = ApiV3SecretsRawSecretNamePost200Response;
+export type CreateSecretResult = ApiV3SecretsRawSecretNamePost200Response;
+export type DeleteSecretResult = ApiV3SecretsRawSecretNamePost200Response;
 
 const convertBool = (value: boolean | undefined) => (value ? "true" : "false");
 
@@ -52,7 +61,7 @@ export default class SecretsClient {
 		this.#requestOptions = requestOptions;
 	}
 
-	listSecrets = async (options: ListSecretsOptions) => {
+	listSecrets = async (options: ListSecretsOptions): Promise<ListSecretsResult> => {
 		try {
 			const res = await this.#apiInstance.apiV3SecretsRawGet(
 				{
@@ -72,7 +81,7 @@ export default class SecretsClient {
 		}
 	};
 
-	getSecret = async (options: GetSecretOptions) => {
+	getSecret = async (options: GetSecretOptions): Promise<GetSecretResult> => {
 		try {
 			const res = await this.#apiInstance.apiV3SecretsRawSecretNameGet(
 				{
@@ -93,7 +102,10 @@ export default class SecretsClient {
 		}
 	};
 
-	updateSecret = async (secretName: DefaultApiApiV3SecretsRawSecretNamePatchRequest["secretName"], options: UpdateSecretOptions) => {
+	updateSecret = async (
+		secretName: DefaultApiApiV3SecretsRawSecretNamePatchRequest["secretName"],
+		options: UpdateSecretOptions
+	): Promise<UpdateSecretResult> => {
 		try {
 			const res = await this.#apiInstance.apiV3SecretsRawSecretNamePatch(
 				{
@@ -111,7 +123,10 @@ export default class SecretsClient {
 		}
 	};
 
-	createSecret = async (secretName: DefaultApiApiV3SecretsRawSecretNamePostRequest["secretName"], options: CreateSecretOptions) => {
+	createSecret = async (
+		secretName: DefaultApiApiV3SecretsRawSecretNamePostRequest["secretName"],
+		options: CreateSecretOptions
+	): Promise<CreateSecretResult> => {
 		try {
 			const res = await this.#apiInstance.apiV3SecretsRawSecretNamePost(
 				{
@@ -129,7 +144,10 @@ export default class SecretsClient {
 		}
 	};
 
-	deleteSecret = async (secretName: DefaultApiApiV3SecretsRawSecretNameDeleteRequest["secretName"], options: DeleteSecretOptions) => {
+	deleteSecret = async (
+		secretName: DefaultApiApiV3SecretsRawSecretNameDeleteRequest["secretName"],
+		options: DeleteSecretOptions
+	): Promise<DeleteSecretResult> => {
 		try {
 			const res = await this.#apiInstance.apiV3SecretsRawSecretNameDelete(
 				{
