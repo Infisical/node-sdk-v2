@@ -127,6 +127,33 @@ const allSecrets = await client.secrets().listSecrets({
 **Returns:**
 - `ApiV3SecretsRawGet200Response`: The response containing the list of secrets.
 
+#### List secrets with imports
+
+The `listSecretsWithImports` method makes it easier to get all your secrets at once. The imported secrets will automatically be added to the secrets returned. The secrets in the selected environment will take precedence over the imported secrets. This means if you have secrets with conflicting names, the secret from the environment the import was imported into, will take precedence. 
+
+```typescript
+const allSecrets = await client.secrets().listSecretsWithImports({
+  environment: "dev",
+  projectId: "<your-project-id>",
+  expandSecretReferences: true,
+  recursive: false,
+  secretPath: "/foo/bar"
+});
+```
+
+**Parameters:**
+- `projectId` (string): The ID of your project.
+- `environment` (string): The environment in which to list secrets (e.g., "dev").
+- `secretPath` (str): The path to the secrets.
+- `expandSecretReferences` (bool): Whether to expand secret references.
+- `recursive` (bool): Whether to list secrets recursively.
+- `tagFilters` (string[]): Tags to filter secrets.
+
+**Returns:**
+- `ApiV1DashboardSecretsOverviewGet200ResponseSecretsInner`: The response containing the list of secrets, with imports.
+
+
+
 #### Create Secret
 
 ```typescript

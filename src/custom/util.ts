@@ -2,6 +2,19 @@ import axios from "axios";
 import { AWS_IDENTITY_DOCUMENT_URI, AWS_TOKEN_METADATA_URI } from "./constants";
 import AWS from "aws-sdk";
 import { InfisicalSDKError } from "./errors";
+import { ApiV3SecretsRawGet200Response } from "../infisicalapi_client";
+
+type Secret = ApiV3SecretsRawGet200Response["secrets"][number];
+
+export const getUniqueSecretsByKey = (secrets: Secret[]) => {
+	const secretMap = new Map<string, Secret>();
+
+	for (const secret of secrets) {
+		secretMap.set(secret.secretKey, secret);
+	}
+
+	return Array.from(secretMap.values());
+};
 
 export const getAwsRegion = async () => {
 	const region = process.env.AWS_REGION; // Typically found in lambda runtime environment
