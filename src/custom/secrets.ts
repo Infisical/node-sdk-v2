@@ -9,6 +9,7 @@ import type {
 	DefaultApiApiV3SecretsRawSecretNamePostRequest
 } from "../infisicalapi_client";
 import { newInfisicalError } from "./errors";
+import { getUniqueSecretsByKey } from "./util";
 
 type SecretType = "shared" | "personal";
 
@@ -51,7 +52,7 @@ export type UpdateSecretResult = ApiV3SecretsRawSecretNamePost200Response;
 export type CreateSecretResult = ApiV3SecretsRawSecretNamePost200Response;
 export type DeleteSecretResult = ApiV3SecretsRawSecretNamePost200Response;
 
-const convertBool = (value: boolean | undefined) => (value ? "true" : "false");
+const convertBool = (value?: boolean) => (value ? "true" : "false");
 
 export default class SecretsClient {
 	#apiInstance: InfisicalApi;
@@ -79,6 +80,42 @@ export default class SecretsClient {
 		} catch (err) {
 			throw newInfisicalError(err);
 		}
+	};
+
+	listSecretsWithImports = async (options: Omit<ListSecretsOptions, "includeImports">): Promise<ListSecretsResult["secrets"]> => {
+		const res = await this.listSecrets({
+			...options,
+			includeImports: true
+		});
+
+		let { imports, secrets } = res;
+		if (imports) {
+			if (options.recursive) {
+				secrets = getUniqueSecretsByKey(secrets);
+			}
+
+			for (const imp of imports) {
+				for (const importedSecret of imp.secrets) {
+					// CASE: We need to ensure that the imported values don't override the "base" secrets.
+					// Priority order is:
+					// Local/Preset variables -> Actual secrets -> Imported secrets (high->low)
+
+					// Check if the secret already exists in the secrets list
+					if (!secrets.find(s => s.secretKey === importedSecret.secretKey)) {
+						secrets.push({
+							...importedSecret,
+							secretPath: imp.secretPath,
+							// These fields are not returned by the API
+							updatedAt: new Date().toISOString(),
+							createdAt: new Date().toISOString(),
+							tags: []
+						});
+					}
+				}
+			}
+		}
+
+		return secrets;
 	};
 
 	getSecret = async (options: GetSecretOptions): Promise<GetSecretResult> => {
