@@ -21,6 +21,7 @@ type ListSecretsOptions = {
 	recursive?: boolean;
 	secretPath?: string;
 	tagSlugs?: string[];
+	viewSecretValue?: boolean;
 };
 
 type GetSecretOptions = {
@@ -32,6 +33,7 @@ type GetSecretOptions = {
 	type?: SecretType;
 	version?: number;
 	projectId: string;
+	viewSecretValue?: boolean;
 };
 
 export type UpdateSecretOptions = Omit<DefaultApiApiV3SecretsRawSecretNamePatchRequest["apiV3SecretsRawSecretNamePatchRequest"], "workspaceId"> & {
@@ -66,6 +68,7 @@ export default class SecretsClient {
 		try {
 			const res = await this.#apiInstance.apiV3SecretsRawGet(
 				{
+					viewSecretValue: convertBool(options.viewSecretValue),
 					environment: options.environment,
 					workspaceId: options.projectId,
 					expandSecretReferences: convertBool(options.expandSecretReferences),
@@ -104,6 +107,7 @@ export default class SecretsClient {
 					if (!secrets.find(s => s.secretKey === importedSecret.secretKey)) {
 						secrets.push({
 							...importedSecret,
+							secretValueHidden: false,
 							secretPath: imp.secretPath,
 							// These fields are not returned by the API
 							updatedAt: new Date().toISOString(),
@@ -122,6 +126,7 @@ export default class SecretsClient {
 		try {
 			const res = await this.#apiInstance.apiV3SecretsRawSecretNameGet(
 				{
+					viewSecretValue: convertBool(options.viewSecretValue),
 					environment: options.environment,
 					secretName: options.secretName,
 					workspaceId: options.projectId,
