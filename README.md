@@ -109,9 +109,10 @@ const allSecrets = await client.secrets().listSecrets({
   environment: "dev",
   projectId: "<your-project-id>",
   expandSecretReferences: true,
+  viewSecretValue: true,
   includeImports: false,
   recursive: false,
-  secretPath: "/foo/bar"
+  secretPath: "/foo/bar",
 });
 ```
 
@@ -119,10 +120,11 @@ const allSecrets = await client.secrets().listSecrets({
 - `projectId` (string): The ID of your project.
 - `environment` (string): The environment in which to list secrets (e.g., "dev").
 - `secretPath` (str): The path to the secrets.
-- `expandSecretReferences` (bool): Whether to expand secret references.
-- `recursive` (bool): Whether to list secrets recursively.
-- `includeImports` (bool): Whether to include imported secrets.
-- `tagFilters` (string[]): Tags to filter secrets.
+- `expandSecretReferences` (bool, optional): Whether to expand secret references.
+- `viewSecretValue` (bool, optional): Whether or not to reveal the secret value of the secrets. If set to `false`, the `secretValue` is masked with `<hidden-by-infisical>`. Defaults to `true.
+- `recursive` (bool, optional): Whether to list secrets recursively.
+- `includeImports` (bool, optional): Whether to include imported secrets.
+- `tagFilters` (string[], optional): Tags to filter secrets.
 
 **Returns:**
 - `ApiV3SecretsRawGet200Response`: The response containing the list of secrets.
@@ -136,6 +138,7 @@ const allSecrets = await client.secrets().listSecretsWithImports({
   environment: "dev",
   projectId: "<your-project-id>",
   expandSecretReferences: true,
+  viewSecretValue: true,
   recursive: false,
   secretPath: "/foo/bar"
 });
@@ -145,9 +148,10 @@ const allSecrets = await client.secrets().listSecretsWithImports({
 - `projectId` (string): The ID of your project.
 - `environment` (string): The environment in which to list secrets (e.g., "dev").
 - `secretPath` (str): The path to the secrets.
-- `expandSecretReferences` (bool): Whether to expand secret references.
-- `recursive` (bool): Whether to list secrets recursively.
-- `tagFilters` (string[]): Tags to filter secrets.
+- `expandSecretReferences` (bool, optional): Whether to expand secret references.
+- `viewSecretValue` (bool, optional): Whether or not to reveal the secret value of the secrets. If set to `false`, the `secretValue` is masked with `<hidden-by-infisical>`. Defaults to `true.
+- `recursive` (bool, optional): Whether to list secrets recursively.
+- `tagFilters` (string[], optional): Tags to filter secrets.
 
 **Returns:**
 - `ApiV1DashboardSecretsOverviewGet200ResponseSecretsInner`: The response containing the list of secrets, with imports.
@@ -236,6 +240,7 @@ const updatedSecret = await client.secrets().updateSecret("SECRET_TO_UPDATE", {
 		projectId: "<your-project-id>",
 		secretName: "DATABASE_URL",
 		expandSecretReferences: true, // Optional
+    viewSecretValue: true,        // Optional
 		includeImports: true,         // Optional
 		secretPath: "/foo/bar",       // Optional
 		type: "shared",               // Optional
@@ -249,6 +254,7 @@ const updatedSecret = await client.secrets().updateSecret("SECRET_TO_UPDATE", {
 - `secretName` (str): The name of the secret.
 - `secretPath` (str, optional): The path to the secret.
 - `expandSecretReferences` (bool, optional): Whether to expand secret references.
+- `viewSecretValue` (bool, optional): Whether or not to reveal the secret value of the secret. If set to `false`, the `secretValue` is masked with `<hidden-by-infisical>`. Defaults to `true.
 - `includeImports` (bool): Whether to include imported secrets.
 - `version` (str, optional): The version of the secret to retrieve. Fetches the latest by default.
 - `type` (personal | shared, optional): The type of secret to fetch.
