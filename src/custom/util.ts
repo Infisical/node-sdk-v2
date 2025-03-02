@@ -1,8 +1,11 @@
+import { Sha256 } from "@aws-crypto/sha256-js";
+import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
+import { HttpRequest } from "@aws-sdk/protocol-http";
+import { SignatureV4 } from "@aws-sdk/signature-v4";
 import axios from "axios";
-import { AWS_IDENTITY_DOCUMENT_URI, AWS_TOKEN_METADATA_URI } from "./constants";
-import AWS from "aws-sdk";
-import { InfisicalSDKError } from "./errors";
 import { ApiV3SecretsRawGet200Response } from "../infisicalapi_client";
+import { AWS_IDENTITY_DOCUMENT_URI, AWS_TOKEN_METADATA_URI } from "./constants";
+import { InfisicalSDKError } from "./errors";
 
 type Secret = ApiV3SecretsRawGet200Response["secrets"][number];
 
@@ -45,23 +48,21 @@ export const getAwsRegion = async () => {
 	}
 };
 
-export const performAwsIamLogin = async (region: string) => {
-	AWS.config.update({
-		region
-	});
+type AwsIamLoginResult = {
+	iamHttpRequestMethod: "POST";
+	iamRequestUrl: string;
+	iamRequestBody: string;
+	iamRequestHeaders: Record<string, string>;
+};
 
-	await new Promise<{ sessionToken?: string; accessKeyId: string; secretAccessKey: string }>((resolve, reject) => {
-		AWS.config.getCredentials((err, res) => {
-			if (err) {
-				throw err;
-			} else {
-				if (!res) {
-					throw new InfisicalSDKError("Credentials not found");
-				}
-				return resolve(res);
-			}
-		});
-	});
+export const performAwsIamLogin = async (
+	region: string
+): Promise<AwsIamLoginResult> => {
+	const credentials = await fromNodeProviderChain()();
+
+	if (!credentials.accessKeyId || !credentials.secretAccessKey) {
+		throw new InfisicalSDKError("Credentials not found");
+	}
 
 	const iamRequestURL = `https://sts.${region}.amazonaws.com/`;
 	const iamRequestBody = "Action=GetCallerIdentity&Version=2011-06-15";
@@ -70,23 +71,38 @@ export const performAwsIamLogin = async (region: string) => {
 		Host: `sts.${region}.amazonaws.com`
 	};
 
-	const request = new AWS.HttpRequest(new AWS.Endpoint(iamRequestURL), region);
-	request.method = "POST";
-	request.headers = iamRequestHeaders;
+	const request = new HttpRequest({
+		protocol: "https:",
+		hostname: `sts.${region}.amazonaws.com`,
+		path: "/",
+		method: "POST",
+		headers: {
+			...iamRequestHeaders,
+			"Content-Length": String(Buffer.byteLength(iamRequestBody)),
+		},
+		body: iamRequestBody,
+	});
 
-	// @ts-expect-error -- .util is not typed
-	request.headers["X-Amz-Date"] = AWS.util.date.iso8601(new Date()).replace(/[:-]|\.\d{3}/g, "");
-	request.body = iamRequestBody;
-	request.headers["Content-Length"] = String(Buffer.byteLength(iamRequestBody));
+	const signer = new SignatureV4({
+		credentials,
+		region,
+		service: "sts",
+		sha256: Sha256,
+	});
 
-	// @ts-expect-error -- .Signers is not typed
-	const signer = new AWS.Signers.V4(request, "sts");
-	signer.addAuthorization(AWS.config.credentials, new Date());
+	await signer.sign(request);
+
+	const headers: Record<string, string> = {};
+	Object.entries(request.headers).forEach(([key, value]) => {
+		if (typeof value === "string") {
+			headers[key] = value;
+		}
+	});
 
 	return {
 		iamHttpRequestMethod: "POST",
 		iamRequestUrl: iamRequestURL,
 		iamRequestBody: iamRequestBody,
-		iamRequestHeaders: iamRequestHeaders
-	} as const;
+		iamRequestHeaders: headers,
+	};
 };
