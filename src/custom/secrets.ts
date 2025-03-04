@@ -54,6 +54,13 @@ export type DeleteSecretResult = ApiV3SecretsRawSecretNamePost200Response;
 
 const convertBool = (value?: boolean) => (value ? "true" : "false");
 
+const defaultBoolean = (value?: boolean, defaultValue: boolean = false) => {
+	if (value === undefined) {
+		return defaultValue;
+	}
+	return value;
+};
+
 export default class SecretsClient {
 	#apiInstance: InfisicalApi;
 	#requestOptions: RawAxiosRequestConfig | undefined;
@@ -68,7 +75,7 @@ export default class SecretsClient {
 				{
 					environment: options.environment,
 					workspaceId: options.projectId,
-					expandSecretReferences: convertBool(options.expandSecretReferences),
+					expandSecretReferences: convertBool(defaultBoolean(options.expandSecretReferences, true)),
 					includeImports: convertBool(options.includeImports),
 					recursive: convertBool(options.recursive),
 					secretPath: options.secretPath,
@@ -125,7 +132,7 @@ export default class SecretsClient {
 					environment: options.environment,
 					secretName: options.secretName,
 					workspaceId: options.projectId,
-					expandSecretReferences: convertBool(options.expandSecretReferences),
+					expandSecretReferences: convertBool(defaultBoolean(options.expandSecretReferences, true)),
 					includeImports: convertBool(options.includeImports),
 					secretPath: options.secretPath,
 					type: options.type,
