@@ -68,7 +68,7 @@ export default class SecretsClient {
 		try {
 			const res = await this.#apiInstance.apiV3SecretsRawGet(
 				{
-					viewSecretValue: options.viewSecretValue ? convertBool(options.viewSecretValue) : undefined,
+					viewSecretValue: convertBool(options.viewSecretValue ?? true),
 					environment: options.environment,
 					workspaceId: options.projectId,
 					expandSecretReferences: convertBool(options.expandSecretReferences),
@@ -125,7 +125,7 @@ export default class SecretsClient {
 		try {
 			const res = await this.#apiInstance.apiV3SecretsRawSecretNameGet(
 				{
-					viewSecretValue: options.viewSecretValue ? convertBool(options.viewSecretValue) : undefined,
+					viewSecretValue: convertBool(options.viewSecretValue ?? true),
 					environment: options.environment,
 					secretName: options.secretName,
 					workspaceId: options.projectId,
