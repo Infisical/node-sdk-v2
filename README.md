@@ -121,7 +121,7 @@ const allSecrets = await client.secrets().listSecrets({
 - `environment` (string): The environment in which to list secrets (e.g., "dev").
 - `secretPath` (str): The path to the secrets.
 - `expandSecretReferences` (bool, optional): Whether to expand secret references.
-- `viewSecretValue` (bool, optional): Whether or not to reveal the secret value of the secrets. If set to `false`, the `secretValue` is masked with `<hidden-by-infisical>`. Defaults to `true.
+- `viewSecretValue` (bool, optional): Whether or not to reveal the secret value of the secrets. If set to `false`, the `secretValue` is masked with `<hidden-by-infisical>`. Defaults to `true`.
 - `recursive` (bool, optional): Whether to list secrets recursively.
 - `includeImports` (bool, optional): Whether to include imported secrets.
 - `tagFilters` (string[], optional): Tags to filter secrets.
@@ -149,7 +149,7 @@ const allSecrets = await client.secrets().listSecretsWithImports({
 - `environment` (string): The environment in which to list secrets (e.g., "dev").
 - `secretPath` (str): The path to the secrets.
 - `expandSecretReferences` (bool, optional): Whether to expand secret references.
-- `viewSecretValue` (bool, optional): Whether or not to reveal the secret value of the secrets. If set to `false`, the `secretValue` is masked with `<hidden-by-infisical>`. Defaults to `true.
+- `viewSecretValue` (bool, optional): Whether or not to reveal the secret value of the secrets. If set to `false`, the `secretValue` is masked with `<hidden-by-infisical>`. Defaults to `true`.
 - `recursive` (bool, optional): Whether to list secrets recursively.
 - `tagFilters` (string[], optional): Tags to filter secrets.
 
@@ -254,7 +254,7 @@ const updatedSecret = await client.secrets().updateSecret("SECRET_TO_UPDATE", {
 - `secretName` (str): The name of the secret.
 - `secretPath` (str, optional): The path to the secret.
 - `expandSecretReferences` (bool, optional): Whether to expand secret references.
-- `viewSecretValue` (bool, optional): Whether or not to reveal the secret value of the secret. If set to `false`, the `secretValue` is masked with `<hidden-by-infisical>`. Defaults to `true.
+- `viewSecretValue` (bool, optional): Whether or not to reveal the secret value of the secret. If set to `false`, the `secretValue` is masked with `<hidden-by-infisical>`. Defaults to `true`.
 - `includeImports` (bool): Whether to include imported secrets.
 - `version` (str, optional): The version of the secret to retrieve. Fetches the latest by default.
 - `type` (personal | shared, optional): The type of secret to fetch.
