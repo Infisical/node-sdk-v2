@@ -21,6 +21,7 @@ type ListSecretsOptions = {
 	recursive?: boolean;
 	secretPath?: string;
 	tagSlugs?: string[];
+	viewSecretValue?: boolean;
 };
 
 type GetSecretOptions = {
@@ -32,6 +33,7 @@ type GetSecretOptions = {
 	type?: SecretType;
 	version?: number;
 	projectId: string;
+	viewSecretValue?: boolean;
 };
 
 export type UpdateSecretOptions = Omit<DefaultApiApiV3SecretsRawSecretNamePatchRequest["apiV3SecretsRawSecretNamePatchRequest"], "workspaceId"> & {
@@ -73,6 +75,7 @@ export default class SecretsClient {
 		try {
 			const res = await this.#apiInstance.apiV3SecretsRawGet(
 				{
+					viewSecretValue: convertBool(options.viewSecretValue ?? true),
 					environment: options.environment,
 					workspaceId: options.projectId,
 					expandSecretReferences: convertBool(defaultBoolean(options.expandSecretReferences, true)),
@@ -129,6 +132,7 @@ export default class SecretsClient {
 		try {
 			const res = await this.#apiInstance.apiV3SecretsRawSecretNameGet(
 				{
+					viewSecretValue: convertBool(options.viewSecretValue ?? true),
 					environment: options.environment,
 					secretName: options.secretName,
 					workspaceId: options.projectId,
