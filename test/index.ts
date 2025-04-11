@@ -12,54 +12,27 @@ const PROJECT_ID = "PROJECT_ID";
 		clientSecret: "CLIENT_SECRET"
 	});
 
-	const allSecrets = await client.secrets().listSecrets({
-		environment: "dev",
-		projectId: PROJECT_ID,
-		expandSecretReferences: true,
-		includeImports: false,
-		recursive: false
+	const environment = await client.environments().create({
+		name: "Demo Environment",
+		projectId: "<your-project-id>",
+		slug: "demo-environment",
+		position: 1 // Optional
 	});
-	console.log(allSecrets.secrets);
 
-	const singleSecret = await client.secrets().getSecret({
-		environment: "dev",
-		projectId: PROJECT_ID,
-		secretName: "TEST1",
-		expandSecretReferences: true, // Optional
-		includeImports: true, // Optional
-
-		type: "shared", // Optional
-		version: 1 // Optional
+	const project = await client.projects().create({
+		projectName: "<name-of-project>",
+		type: "secret-manager", // cert-manager, secret-manager, kms, ssh
+		projectDescription: "<project-description>", // Optional
+		slug: "<slug-of-project-to-create>", // Optional
+		template: "<project-template-name>", // Optional
+		kmsKeyId: "kms-key-id" // Optional
 	});
-	console.log(`Fetched single secret, ${singleSecret}=${singleSecret.secretValue}`);
 
-	const newSecret = await client.secrets().createSecret("NEW_SECRET_NAME22423423", {
-		environment: "dev",
-		projectId: PROJECT_ID,
-		secretValue: "SECRET_VALUE"
+	const folder = await client.folders().create({
+		name: "<folder-name>",
+		path: "<folder-path>",
+		projectId: "<your-project-id>",
+		environment: "<environment-slug>",
+		description: "<folder-description>" // Optional
 	});
-	console.log(`You created a new secret: ${newSecret.secret.secretKey}`);
-
-	const updatedSecret = await client.secrets().updateSecret("NEW_SECRET_NAME22423423", {
-		environment: "dev",
-		projectId: PROJECT_ID,
-		secretValue: "UPDATED_SECRET_VALUE",
-		newSecretName: "NEW_SECRET_NAME22222", // Optional
-		secretComment: "This is an updated secret", // Optional
-
-		secretReminderNote: "This is an updated reminder note", // Optional
-		secretReminderRepeatDays: 14, // Optional
-		skipMultilineEncoding: false, // Optional
-		metadata: {
-			// Optional
-			extra: "metadata"
-		}
-	});
-	console.log(`You updated the secret: ${updatedSecret.secret.secretKey}`);
-
-	const deletedSecret = await client.secrets().deleteSecret("NEW_SECRET_NAME22222", {
-		environment: "dev",
-		projectId: PROJECT_ID
-	});
-	console.log(`You deleted the secret: ${deletedSecret.secret.secretKey}`);
 })();
