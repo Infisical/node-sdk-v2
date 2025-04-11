@@ -1,65 +1,52 @@
 import { InfisicalSDK } from "../src";
 
-const PROJECT_ID = "PROJECT_ID";
-
 (async () => {
 	const client = new InfisicalSDK({
 		siteUrl: "http://localhost:8080" // Optional, defaults to https://app.infisical.com
 	});
 
+	const EMAIL_TO_INVITE = "<your-email>";
+
+	const universalAuthClientId = process.env.UNIVERSAL_AUTH_CLIENT_ID;
+	const universalAuthClientSecret = process.env.UNIVERSAL_AUTH_CLIENT_SECRET;
+
+	if (!universalAuthClientId || !universalAuthClientSecret) {
+		throw new Error("UNIVERSAL_AUTH_CLIENT_ID and UNIVERSAL_AUTH_CLIENT_SECRET must be set");
+	}
+
 	await client.auth().universalAuth.login({
-		clientId: "CLIENT_ID",
-		clientSecret: "CLIENT_SECRET"
+		clientId: universalAuthClientId,
+		clientSecret: universalAuthClientSecret
 	});
 
-	const allSecrets = await client.secrets().listSecrets({
-		environment: "dev",
-		projectId: PROJECT_ID,
-		expandSecretReferences: true,
-		includeImports: false,
-		recursive: false
+	console.log("Creating project");
+	const project = await client.projects().create({
+		projectDescription: "test description",
+		projectName: "test project1344assdfd",
+		type: "secret-manager",
+		slug: "test-project1assdfd43"
 	});
-	console.log(allSecrets.secrets);
 
-	const singleSecret = await client.secrets().getSecret({
-		environment: "dev",
-		projectId: PROJECT_ID,
-		secretName: "TEST1",
-		expandSecretReferences: true, // Optional
-		includeImports: true, // Optional
-
-		type: "shared", // Optional
-		version: 1 // Optional
+	const environment = await client.environments().create({
+		position: 100,
+		slug: "test-environment-custom-slug",
+		name: "test environment",
+		projectId: project.id
 	});
-	console.log(`Fetched single secret, ${singleSecret}=${singleSecret.secretValue}`);
 
-	const newSecret = await client.secrets().createSecret("NEW_SECRET_NAME22423423", {
-		environment: "dev",
-		projectId: PROJECT_ID,
-		secretValue: "SECRET_VALUE"
+	console.log("Creating folder");
+	const folder = await client.folders().create({
+		name: "test-folder",
+		projectId: project.id,
+		environment: environment.slug
 	});
-	console.log(`You created a new secret: ${newSecret.secret.secretKey}`);
 
-	const updatedSecret = await client.secrets().updateSecret("NEW_SECRET_NAME22423423", {
-		environment: "dev",
-		projectId: PROJECT_ID,
-		secretValue: "UPDATED_SECRET_VALUE",
-		newSecretName: "NEW_SECRET_NAME22222", // Optional
-		secretComment: "This is an updated secret", // Optional
-
-		secretReminderNote: "This is an updated reminder note", // Optional
-		secretReminderRepeatDays: 14, // Optional
-		skipMultilineEncoding: false, // Optional
-		metadata: {
-			// Optional
-			extra: "metadata"
-		}
+	console.log("Inviting member to project");
+	const memberships = await client.projects().inviteMembers({
+		projectId: project.id,
+		emails: [EMAIL_TO_INVITE],
+		roleSlugs: ["admin"]
 	});
-	console.log(`You updated the secret: ${updatedSecret.secret.secretKey}`);
 
-	const deletedSecret = await client.secrets().deleteSecret("NEW_SECRET_NAME22222", {
-		environment: "dev",
-		projectId: PROJECT_ID
-	});
-	console.log(`You deleted the secret: ${deletedSecret.secret.secretKey}`);
+	console.log("Memberships", memberships);
 })();

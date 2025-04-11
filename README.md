@@ -432,3 +432,95 @@ const renewedLease = await client.dynamicSecrets().leases.renew(newLease.lease.i
 **Returns:**
 - `ApiV1DynamicSecretsLeasesLeaseIdDelete200Response`: The renewed lease response _(doesn't contain new credentials)_.
 
+### `projects`
+
+#### Create a new project
+
+```typescript
+const project = await client.projects().create({
+  projectName: "<name-of-project>",
+  type: "secret-manager", // cert-manager, secret-manager, kms, ssh
+  projectDescription: "<project-description>", // Optional
+  slug: "<slug-of-project-to-create>", // Optional
+  template: "<project-template-name>", // Optional
+  kmsKeyId: "kms-key-id" // Optional
+});
+```
+
+**Parameters:**
+- `projectName` (string): The name of the project to create.
+- `type` (string): The type of project to create. Valid options are `secret-manager`, `cert-manager`, `kms`, `ssh`
+- `projectDescription` (string): An optional description of the project to create.
+- `slug` (string): An optional slug for the project to create. If not provided, one will be generated automatically.
+- `template` (string): Optionally provide a project template name to use for creating this project.
+- `kmsKeyId` (string): The ID of the KMS key to use for the project. Will use the Infisical KMS by default.
+
+**Returns:**
+- `ApiV1WorkspaceWorkspaceIdGet200ResponseWorkspace`: The project that was created.
+
+
+#### Invite members to a project
+
+When inviting members to projects, you must either specify the `emails` or `usernames`. If neither are specified, the SDK will throw an error.
+
+```typescript
+const memberships = await client.projects().inviteMembers({
+  projectId: project.id,
+  emails: ["test1@example.com", "test2@example.com"], // Optional
+  usernames: ["example-user3", "example-user4"] // Optional 
+  roleSlugs: ["member"] // Optional
+});
+```
+
+**Parameters:**
+- `projectId`: (string): The ID of the project to invite members to
+- `emails`: (string[]): An array of emails of the users to invite to the project.
+- `usernames`: (string[]) An array of usernames of the users to invite to the project.
+- `roleSlugs`: (string[]): An array of role slugs to assign to the members. If not specified, this will default to `member`.
+
+**Returns:**
+- `ApiV1OrganizationAdminProjectsProjectIdGrantAdminAccessPost200ResponseMembership`: An array of the created project memberships.
+
+### `environments`
+
+#### Create a new environment
+
+```typescript
+const environment = await client.environments().create({
+  name: "<environment-name>",
+  projectId: "<your-project-id>",
+  slug: "<environment-slug>",
+  position: 1 // Optional
+});
+```
+
+**Parameters:**
+- `name` (string): The name of the environment to be created.
+- `projectId` (string): The ID of the project to create the environment within.
+- `slug`: (string): The slug of the environment to be created.
+- `position` (number): An optional position of the environment to be created. The position is used in the Infisical UI to display environments in order. Environments with the lowest position come first.
+
+**Returns:**
+- `ApiV1WorkspaceWorkspaceIdEnvironmentsEnvIdGet200ResponseEnvironment`: The environment that was created.
+
+#### Create a new folder
+
+```typescript
+const folder = await client.folders().create({
+  name: "<folder-name>",
+  path: "<folder-path>",
+  projectId: "<your-project-id>",
+  environment: "<environment-slug>",
+  description: "<folder-description>" // Optional
+});
+```
+
+**Parameters:**
+- `name` (string): The name of the folder to create.
+- `path` (string): The path where of where to create the folder. Defaults to `/`, which is the root folder.
+- `projectId` (string): The ID of the project to create the folder within.
+- `environment` (string): The slug of the environment to create the folder within.
+- `description` (string): An optional folder description.
+
+**Returns:**
+- `ApiV1FoldersPost200ResponseFolder`: The folder that was created.

@@ -6,6 +6,9 @@ import { RawAxiosRequestConfig } from "axios";
 import DynamicSecretsClient from "./custom/dynamic-secrets";
 
 import * as ApiClient from "./infisicalapi_client";
+import EnvironmentsClient from "./custom/environments";
+import ProjectsClient from "./custom/projects";
+import FoldersClient from "./custom/folders";
 
 const buildRestClient = (apiClient: InfisicalApi, requestOptions?: RawAxiosRequestConfig) => {
 	return {
@@ -26,6 +29,9 @@ class InfisicalSDK {
 	#requestOptions: RawAxiosRequestConfig | undefined;
 	#secretsClient: SecretsClient;
 	#dynamicSecretsClient: DynamicSecretsClient;
+	#environmentsClient: EnvironmentsClient;
+	#projectsClient: ProjectsClient;
+	#foldersClient: FoldersClient;
 	#authClient: AuthClient;
 	#basePath: string;
 
@@ -41,6 +47,9 @@ class InfisicalSDK {
 		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance);
 		this.#dynamicSecretsClient = new DynamicSecretsClient(this.#apiInstance, this.#requestOptions);
 		this.#secretsClient = new SecretsClient(this.#apiInstance, this.#requestOptions);
+		this.#environmentsClient = new EnvironmentsClient(this.#apiInstance, this.#requestOptions);
+		this.#projectsClient = new ProjectsClient(this.#apiInstance, this.#requestOptions);
+		this.#foldersClient = new FoldersClient(this.#apiInstance, this.#requestOptions);
 		this.rest = () => buildRestClient(this.#apiInstance, this.#requestOptions);
 	}
 
@@ -62,11 +71,17 @@ class InfisicalSDK {
 		this.#secretsClient = new SecretsClient(this.#apiInstance, this.#requestOptions);
 		this.#dynamicSecretsClient = new DynamicSecretsClient(this.#apiInstance, this.#requestOptions);
 		this.#authClient = new AuthClient(this.authenticate.bind(this), this.#apiInstance, accessToken);
+		this.#environmentsClient = new EnvironmentsClient(this.#apiInstance, this.#requestOptions);
+		this.#projectsClient = new ProjectsClient(this.#apiInstance, this.#requestOptions);
+		this.#foldersClient = new FoldersClient(this.#apiInstance, this.#requestOptions);
 
 		return this;
 	}
 
 	secrets = () => this.#secretsClient;
+	environments = () => this.#environmentsClient;
+	projects = () => this.#projectsClient;
+	folders = () => this.#foldersClient;
 	dynamicSecrets = () => this.#dynamicSecretsClient;
 	auth = () => this.#authClient;
 	rest = () => buildRestClient(this.#apiInstance, this.#requestOptions);
