@@ -33,7 +33,12 @@ export const newInfisicalError = (error: any) => {
 		const data = error?.response?.data as TApiErrorResponse;
 
 		if (data?.message) {
-			return new InfisicalSDKRequestError(data.message, {
+			let message = data.message;
+			if (error.status === 422) {
+				message = JSON.stringify(data);
+			}
+
+			return new InfisicalSDKRequestError(message, {
 				url: error.response?.config.url || "",
 				method: error.response?.config.method || "",
 				statusCode: error.response?.status || 0
