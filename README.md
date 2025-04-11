@@ -458,15 +458,38 @@ const project = await client.projects().create({
 **Returns:**
 - `ApiV1WorkspaceWorkspaceIdGet200ResponseWorkspace`: The project that was created.
 
+
+#### Invite members to a project
+
+When inviting members to projects, you must either specify the `emails` or `usernames`. If neither are specified, the SDK will throw an error.
+
+```typescript
+const memberships = await client.projects().inviteMembers({
+  projectId: project.id,
+  emails: ["test1@example.com", "test2@example.com"], // Optional
+  usernames: ["example-user3", "example-user4"] // Optional 
+  roleSlugs: ["member"] // Optional
+});
+```
+
+**Parameters:**
+- `projectId`: (string): The ID of the project to invite members to
+- `emails`: (string[]): An array of emails of the users to invite to the project.
+- `usernames`: (string[]) An array of usernames of the users to invite to the project.
+`roleSlugs`: (string[]): An array of role slugs to assign to the members. If not specified, this will default to `member`.
+
+**Returns:**
+- `ApiV1OrganizationAdminProjectsProjectIdGrantAdminAccessPost200ResponseMembership`: An array of the created project memberships.
+
 ### `environments`
 
 #### Create a new environment
 
 ```typescript
 const environment = await client.environments().create({
-  name: "Demo Environment",
+  name: "<environment-name>",
   projectId: "<your-project-id>",
-  slug: "demo-environment",
+  slug: "<environment-slug>",
   position: 1 // Optional
 });
 ```

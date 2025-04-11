@@ -1,38 +1,52 @@
 import { InfisicalSDK } from "../src";
 
-const PROJECT_ID = "PROJECT_ID";
-
 (async () => {
 	const client = new InfisicalSDK({
 		siteUrl: "http://localhost:8080" // Optional, defaults to https://app.infisical.com
 	});
 
+	const EMAIL_TO_INVITE = "<your-email>";
+
+	const universalAuthClientId = process.env.UNIVERSAL_AUTH_CLIENT_ID;
+	const universalAuthClientSecret = process.env.UNIVERSAL_AUTH_CLIENT_SECRET;
+
+	if (!universalAuthClientId || !universalAuthClientSecret) {
+		throw new Error("UNIVERSAL_AUTH_CLIENT_ID and UNIVERSAL_AUTH_CLIENT_SECRET must be set");
+	}
+
 	await client.auth().universalAuth.login({
-		clientId: "CLIENT_ID",
-		clientSecret: "CLIENT_SECRET"
+		clientId: universalAuthClientId,
+		clientSecret: universalAuthClientSecret
+	});
+
+	console.log("Creating project");
+	const project = await client.projects().create({
+		projectDescription: "test description",
+		projectName: "test project1344assdfd",
+		type: "secret-manager",
+		slug: "test-project1assdfd43"
 	});
 
 	const environment = await client.environments().create({
-		name: "Demo Environment",
-		projectId: "<your-project-id>",
-		slug: "demo-environment",
-		position: 1 // Optional
+		position: 100,
+		slug: "test-environment-custom-slug",
+		name: "test environment",
+		projectId: project.id
 	});
 
-	const project = await client.projects().create({
-		projectName: "<name-of-project>",
-		type: "secret-manager", // cert-manager, secret-manager, kms, ssh
-		projectDescription: "<project-description>", // Optional
-		slug: "<slug-of-project-to-create>", // Optional
-		template: "<project-template-name>", // Optional
-		kmsKeyId: "kms-key-id" // Optional
-	});
-
+	console.log("Creating folder");
 	const folder = await client.folders().create({
-		name: "<folder-name>",
-		path: "<folder-path>",
-		projectId: "<your-project-id>",
-		environment: "<environment-slug>",
-		description: "<folder-description>" // Optional
+		name: "test-folder",
+		projectId: project.id,
+		environment: environment.slug
 	});
+
+	console.log("Inviting member to project");
+	const memberships = await client.projects().inviteMembers({
+		projectId: project.id,
+		emails: [EMAIL_TO_INVITE],
+		roleSlugs: ["admin"]
+	});
+
+	console.log("Memberships", memberships);
 })();
