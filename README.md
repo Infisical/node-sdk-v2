@@ -476,7 +476,7 @@ const memberships = await client.projects().inviteMembers({
 - `projectId`: (string): The ID of the project to invite members to
 - `emails`: (string[]): An array of emails of the users to invite to the project.
 - `usernames`: (string[]) An array of usernames of the users to invite to the project.
-`roleSlugs`: (string[]): An array of role slugs to assign to the members. If not specified, this will default to `member`.
+- `roleSlugs`: (string[]): An array of role slugs to assign to the members. If not specified, this will default to `member`.
 
 **Returns:**
 - `ApiV1OrganizationAdminProjectsProjectIdGrantAdminAccessPost200ResponseMembership`: An array of the created project memberships.
