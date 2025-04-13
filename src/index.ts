@@ -46,9 +46,10 @@ const setupAxiosRetry = () => {
 			config._retryCount!++;
 			const exponentialDelay = Math.min(initialRetryDelay * Math.pow(backoffFactor, config._retryCount! - 1));
 
-			return new Promise(async resolve => {
-				await new Promise(resolve => setTimeout(resolve, exponentialDelay));
-				resolve(axiosInstance(config));
+			return new Promise(resolve => {
+				setTimeout(() => {
+					resolve(axiosInstance(config));
+				}, exponentialDelay);
 			});
 		}
 
