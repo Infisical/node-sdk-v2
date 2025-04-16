@@ -29,7 +29,6 @@ const setupAxiosRetry = () => {
 	const maxRetries = 4;
 
 	const initialRetryDelay = 1000;
-
 	const backoffFactor = 2;
 
 	axiosInstance.interceptors.response.use(null, (error: AxiosError) => {
@@ -44,7 +43,9 @@ const setupAxiosRetry = () => {
 		// handle rate limits and network errors
 		if ((error.response?.status === 429 || error.response?.status === undefined) && config && config._retryCount! < maxRetries) {
 			config._retryCount!++;
-			const exponentialDelay = Math.min(initialRetryDelay * Math.pow(backoffFactor, config._retryCount! - 1));
+			const baseDelay = initialRetryDelay * Math.pow(backoffFactor, config._retryCount! - 1);
+			const jitter = baseDelay * 0.2; // 20% +/- jitter
+			const exponentialDelay = Math.min(baseDelay + (Math.random() * 2 - 1) * jitter);
 
 			return new Promise(resolve => {
 				setTimeout(() => {
