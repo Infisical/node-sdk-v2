@@ -45,7 +45,7 @@ const setupAxiosRetry = () => {
 			config._retryCount!++;
 			const baseDelay = initialRetryDelay * Math.pow(backoffFactor, config._retryCount! - 1);
 			const jitter = baseDelay * 0.2; // 20% +/- jitter
-			const exponentialDelay = Math.min(baseDelay + (Math.random() * 2 - 1) * jitter);
+			const exponentialDelay = baseDelay + (Math.random() * 2 - 1) * jitter;
 
 			return new Promise(resolve => {
 				setTimeout(() => {
