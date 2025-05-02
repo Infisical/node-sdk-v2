@@ -2,9 +2,7 @@ import axios from "axios";
 import { AWS_IDENTITY_DOCUMENT_URI, AWS_TOKEN_METADATA_URI } from "./constants";
 import AWS from "aws-sdk";
 import { InfisicalSDKError } from "./errors";
-import { ApiV3SecretsRawGet200Response } from "../infisicalapi_client";
-
-type Secret = ApiV3SecretsRawGet200Response["secrets"][number];
+import { Secret } from "../api/types";
 
 export const getUniqueSecretsByKey = (secrets: Secret[]) => {
 	const secretMap = new Map<string, Secret>();

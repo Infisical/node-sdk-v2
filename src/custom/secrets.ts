@@ -1,215 +1,192 @@
-import { RawAxiosRequestConfig } from "axios";
-import { DefaultApi as InfisicalApi } from "../infisicalapi_client";
-import type {
-	ApiV3SecretsRawGet200Response,
-	ApiV3SecretsRawSecretNameGet200Response,
-	ApiV3SecretsRawSecretNamePost200Response,
-	DefaultApiApiV3SecretsRawSecretNameDeleteRequest,
-	DefaultApiApiV3SecretsRawSecretNamePatchRequest,
-	DefaultApiApiV3SecretsRawSecretNamePostRequest
-} from "../infisicalapi_client";
+import { SecretsApi } from "../api/endpoints/secrets";
+import { Secret } from "../api/types";
 import { newInfisicalError } from "./errors";
-import { getUniqueSecretsByKey } from "./util";
 
 type SecretType = "shared" | "personal";
 
 type ListSecretsOptions = {
-	environment: string;
-	projectId: string;
-	expandSecretReferences?: boolean;
-	includeImports?: boolean;
-	recursive?: boolean;
-	secretPath?: string;
-	tagSlugs?: string[];
-	viewSecretValue?: boolean;
+  environment: string;
+  projectId: string;
+  expandSecretReferences?: boolean;
+  includeImports?: boolean;
+  recursive?: boolean;
+  secretPath?: string;
+  tagSlugs?: string[];
+  viewSecretValue?: boolean;
 };
 
 type GetSecretOptions = {
+  environment: string;
+  secretName: string;
+  expandSecretReferences?: boolean;
+  includeImports?: boolean;
+  secretPath?: string;
+  type?: SecretType;
+  version?: number;
+  projectId: string;
+  viewSecretValue?: boolean;
+};
+
+type BaseSecretOptions = {
 	environment: string;
-	secretName: string;
-	expandSecretReferences?: boolean;
-	includeImports?: boolean;
+	projectId: string;
+	secretComment?: string;
 	secretPath?: string;
+	secretReminderNote?: string;
+	secretReminderRepeatDays?: number;
+	skipMultilineEncoding?: boolean;
+	tagIds?: string[];
 	type?: SecretType;
-	version?: number;
-	projectId: string;
-	viewSecretValue?: boolean;
+	metadata?: Record<string, any>;
+	secretMetadata?: Record<string, any>[];
 };
 
-export type UpdateSecretOptions = Omit<DefaultApiApiV3SecretsRawSecretNamePatchRequest["apiV3SecretsRawSecretNamePatchRequest"], "workspaceId"> & {
-	projectId: string;
-};
+export type UpdateSecretOptions = {
+  secretValue?: string;
+  newSecretName?: string;
+} & BaseSecretOptions;
 
-export type CreateSecretOptions = Omit<DefaultApiApiV3SecretsRawSecretNamePostRequest["apiV3SecretsRawSecretNamePostRequest"], "workspaceId"> & {
-	projectId: string;
-};
+export type CreateSecretOptions = {
+  secretValue: string;
+} & BaseSecretOptions;
 
-export type DeleteSecretOptions = Omit<DefaultApiApiV3SecretsRawSecretNameDeleteRequest["apiV3SecretsRawSecretNameDeleteRequest"], "workspaceId"> & {
-	projectId: string;
+export type DeleteSecretOptions = {
+  environment: string;
+  projectId: string;
+  secretPath?: string;
+  type?: SecretType;
 };
-
-export type ListSecretsResult = ApiV3SecretsRawGet200Response;
-export type GetSecretResult = ApiV3SecretsRawSecretNameGet200Response["secret"];
-export type UpdateSecretResult = ApiV3SecretsRawSecretNamePost200Response;
-export type CreateSecretResult = ApiV3SecretsRawSecretNamePost200Response;
-export type DeleteSecretResult = ApiV3SecretsRawSecretNamePost200Response;
 
 const convertBool = (value?: boolean) => (value ? "true" : "false");
 
 const defaultBoolean = (value?: boolean, defaultValue: boolean = false) => {
-	if (value === undefined) {
-		return defaultValue;
-	}
-	return value;
+  if (value === undefined) {
+    return defaultValue;
+  }
+  return value;
 };
 
 export default class SecretsClient {
-	#apiInstance: InfisicalApi;
-	#requestOptions: RawAxiosRequestConfig | undefined;
-	constructor(apiInstance: InfisicalApi, requestOptions: RawAxiosRequestConfig | undefined) {
-		this.#apiInstance = apiInstance;
-		this.#requestOptions = requestOptions;
-	}
+  constructor(private apiClient: SecretsApi) {}
 
-	listSecrets = async (options: ListSecretsOptions): Promise<ListSecretsResult> => {
-		try {
-			const res = await this.#apiInstance.apiV3SecretsRawGet(
-				{
-					viewSecretValue: convertBool(options.viewSecretValue ?? true),
-					environment: options.environment,
-					workspaceId: options.projectId,
-					expandSecretReferences: convertBool(defaultBoolean(options.expandSecretReferences, true)),
-					includeImports: convertBool(options.includeImports),
-					recursive: convertBool(options.recursive),
-					secretPath: options.secretPath,
-					tagSlugs: options.tagSlugs ? options.tagSlugs.join(",") : undefined
-				},
-				this.#requestOptions
-			);
-			return res.data;
-		} catch (err) {
-			throw newInfisicalError(err);
-		}
-	};
+  listSecrets = async (options: ListSecretsOptions) => {
+    try {
+      return await this.apiClient.listSecrets({
+        workspaceId: options.projectId,
+        environment: options.environment,
+        expandSecretReferences: convertBool(
+          defaultBoolean(options.expandSecretReferences, true)
+        ),
+        includeImports: convertBool(options.includeImports),
+        recursive: convertBool(options.recursive),
+        secretPath: options.secretPath,
+        tagSlugs: options.tagSlugs ? options.tagSlugs.join(",") : undefined,
+        viewSecretValue: convertBool(options.viewSecretValue ?? true),
+      });
+    } catch (err) {
+      throw newInfisicalError(err);
+    }
+  };
 
-	listSecretsWithImports = async (options: Omit<ListSecretsOptions, "includeImports">): Promise<ListSecretsResult["secrets"]> => {
-		const res = await this.listSecrets({
-			...options,
-			includeImports: true
-		});
+  listSecretsWithImports = async (
+    options: Omit<ListSecretsOptions, "includeImports">
+  ) => {
+    const res = await this.listSecrets({
+      ...options,
+      includeImports: true,
+    });
 
-		let { imports, secrets } = res;
-		if (imports) {
-			if (options.recursive) {
-				secrets = getUniqueSecretsByKey(secrets);
-			}
+    let { imports, secrets } = res;
+    if (imports) {
+      for (const imp of imports) {
+        for (const importedSecret of imp.secrets) {
+          if (!secrets.find((s) => s.secretKey === importedSecret.secretKey)) {
+            secrets.push({
+              ...importedSecret,
+              secretPath: imp.secretPath,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              tags: [],
+            });
+          }
+        }
+      }
+    }
 
-			for (const imp of imports) {
-				for (const importedSecret of imp.secrets) {
-					// CASE: We need to ensure that the imported values don't override the "base" secrets.
-					// Priority order is:
-					// Local/Preset variables -> Actual secrets -> Imported secrets (high->low)
+    return secrets;
+  };
 
-					// Check if the secret already exists in the secrets list
-					if (!secrets.find(s => s.secretKey === importedSecret.secretKey)) {
-						secrets.push({
-							...importedSecret,
-							secretPath: imp.secretPath,
-							// These fields are not returned by the API
-							updatedAt: new Date().toISOString(),
-							createdAt: new Date().toISOString(),
-							tags: []
-						});
-					}
-				}
-			}
-		}
+  getSecret = async (options: GetSecretOptions) => {
+    try {
+      const res = await this.apiClient.getSecret({
+        secretName: options.secretName,
+        workspaceId: options.projectId,
+        environment: options.environment,
+        expandSecretReferences: convertBool(
+          defaultBoolean(options.expandSecretReferences, true)
+        ),
+        includeImports: convertBool(options.includeImports),
+        secretPath: options.secretPath,
+        type: options.type,
+        version: options.version,
+        viewSecretValue: convertBool(options.viewSecretValue ?? true),
+      });
+      return res.secret;
+    } catch (err) {
+      throw newInfisicalError(err);
+    }
+  };
 
-		return secrets;
-	};
+  updateSecret = async (secretName: string, options: UpdateSecretOptions) => {
+    try {
+      return await this.apiClient.updateSecret(secretName, {
+        workspaceId: options.projectId,
+        environment: options.environment,
+        secretValue: options.secretValue,
+        newSecretName: options.newSecretName,
+        secretComment: options.secretComment,
+        secretPath: options.secretPath,
+        secretReminderNote: options.secretReminderNote,
+        secretReminderRepeatDays: options.secretReminderRepeatDays,
+        skipMultilineEncoding: options.skipMultilineEncoding,
+        tagIds: options.tagIds,
+        type: options.type,
+        metadata: options.metadata,
+      });
+    } catch (err) {
+      throw newInfisicalError(err);
+    }
+  };
 
-	getSecret = async (options: GetSecretOptions): Promise<GetSecretResult> => {
-		try {
-			const res = await this.#apiInstance.apiV3SecretsRawSecretNameGet(
-				{
-					viewSecretValue: convertBool(options.viewSecretValue ?? true),
-					environment: options.environment,
-					secretName: options.secretName,
-					workspaceId: options.projectId,
-					expandSecretReferences: convertBool(defaultBoolean(options.expandSecretReferences, true)),
-					includeImports: convertBool(options.includeImports),
-					secretPath: options.secretPath,
-					type: options.type,
-					version: options.version
-				},
-				this.#requestOptions
-			);
-			return res.data.secret;
-		} catch (err) {
-			throw newInfisicalError(err);
-		}
-	};
+  createSecret = async (secretName: string, options: CreateSecretOptions) => {
+    try {
+      return await this.apiClient.createSecret(secretName, {
+        workspaceId: options.projectId,
+        environment: options.environment,
+        secretValue: options.secretValue,
+        secretComment: options.secretComment,
+        secretPath: options.secretPath,
+        secretReminderNote: options.secretReminderNote,
+        secretReminderRepeatDays: options.secretReminderRepeatDays,
+        skipMultilineEncoding: options.skipMultilineEncoding,
+        tagIds: options.tagIds,
+        type: options.type,
+      });
+    } catch (err) {
+      throw newInfisicalError(err);
+    }
+  };
 
-	updateSecret = async (
-		secretName: DefaultApiApiV3SecretsRawSecretNamePatchRequest["secretName"],
-		options: UpdateSecretOptions
-	): Promise<UpdateSecretResult> => {
-		try {
-			const res = await this.#apiInstance.apiV3SecretsRawSecretNamePatch(
-				{
-					secretName,
-					apiV3SecretsRawSecretNamePatchRequest: {
-						...options,
-						workspaceId: options.projectId
-					}
-				},
-				this.#requestOptions
-			);
-			return res.data;
-		} catch (err) {
-			throw newInfisicalError(err);
-		}
-	};
-
-	createSecret = async (
-		secretName: DefaultApiApiV3SecretsRawSecretNamePostRequest["secretName"],
-		options: CreateSecretOptions
-	): Promise<CreateSecretResult> => {
-		try {
-			const res = await this.#apiInstance.apiV3SecretsRawSecretNamePost(
-				{
-					secretName,
-					apiV3SecretsRawSecretNamePostRequest: {
-						...options,
-						workspaceId: options.projectId
-					}
-				},
-				this.#requestOptions
-			);
-			return res.data;
-		} catch (err) {
-			throw newInfisicalError(err);
-		}
-	};
-
-	deleteSecret = async (
-		secretName: DefaultApiApiV3SecretsRawSecretNameDeleteRequest["secretName"],
-		options: DeleteSecretOptions
-	): Promise<DeleteSecretResult> => {
-		try {
-			const res = await this.#apiInstance.apiV3SecretsRawSecretNameDelete(
-				{
-					secretName,
-					apiV3SecretsRawSecretNameDeleteRequest: {
-						...options,
-						workspaceId: options.projectId
-					}
-				},
-				this.#requestOptions
-			);
-			return res.data;
-		} catch (err) {
-			throw newInfisicalError(err);
-		}
-	};
+  deleteSecret = async (secretName: string, options: DeleteSecretOptions) => {
+    try {
+      return await this.apiClient.deleteSecret(secretName, {
+        workspaceId: options.projectId,
+        environment: options.environment,
+        secretPath: options.secretPath,
+        type: options.type,
+      });
+    } catch (err) {
+      throw newInfisicalError(err);
+    }
+  };
 }
