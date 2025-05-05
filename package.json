@@ -28,7 +28,6 @@
     "tsup": "^8.2.4"
   },
   "dependencies": {
-    "@infisical/sdk": "file:",
     "aws-sdk": "2.1311.0",
     "axios": "^1.7.5",
     "typescript": "^5.5.4",

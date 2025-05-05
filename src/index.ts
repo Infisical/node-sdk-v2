@@ -99,8 +99,8 @@ export {
 } from "./custom/schemas";
 
 // Export domain-specific types
-export type * from "./custom/secrets";
-export type * from "./custom/dynamic-secrets";
-export type * from "./custom/environments";
-export type * from "./custom/projects";
-export type * from "./custom/folders";
+export * from "./custom/secrets";
+export * from "./custom/dynamic-secrets";
+export * from "./custom/environments";
+export * from "./custom/projects";
+export * from "./custom/folders";
