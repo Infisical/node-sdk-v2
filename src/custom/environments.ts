@@ -1,12 +1,6 @@
 import { EnvironmentsApi } from "../api/endpoints/environments";
 import { newInfisicalError } from "./errors";
-
-export type CreateEnvironmentOptions = {
-  name: string;
-  projectId: string;
-  slug: string;
-  position?: number;
-};
+import { CreateEnvironmentOptions } from "../api/types/environments";
 
 export default class EnvironmentsClient {
   constructor(private apiClient: EnvironmentsApi) {}

@@ -25,7 +25,7 @@ export class SecretsApi {
     const { secretName, ...queryParams } = params;
     return this.apiClient.get<GetSecretResponse>(
       `/api/v3/secrets/raw/${encodeURIComponent(secretName)}`,
-      { params: queryParams }
+      { params }
     );
   }
 

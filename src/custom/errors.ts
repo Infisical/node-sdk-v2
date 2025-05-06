@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export class InfisicalSDKError extends Error {
   constructor(message: string) {
     super(message);
@@ -22,7 +24,7 @@ export class InfisicalSDKRequestError extends Error {
 }
 
 export const newInfisicalError = (error: any) => {
-  if (error?.isAxiosError) {
+  if (axios.isAxiosError(error)) {
     const data = error?.response?.data;
 
     if (data?.message) {
@@ -39,6 +41,7 @@ export const newInfisicalError = (error: any) => {
     } else if (error.message) {
       return new InfisicalSDKError(error.message);
     } else if (error.code) {
+      // If theres no message but a code is present, it's likely to be an aggregation error. This is not specific to Axios, but it falls under the AxiosError type
       return new InfisicalSDKError(error.code);
     } else {
       return new InfisicalSDKError("Request failed with unknown error");

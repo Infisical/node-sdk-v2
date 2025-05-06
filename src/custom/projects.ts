@@ -1,21 +1,6 @@
 import { ProjectsApi } from "../api/endpoints/projects";
 import { newInfisicalError } from "./errors";
-
-export type CreateProjectOptions = {
-  projectName: string;
-  type: string;
-  projectDescription?: string;
-  slug?: string;
-  template?: string;
-  kmsKeyId?: string;
-};
-
-export type InviteMemberToProjectOptions = {
-  projectId: string;
-  emails?: string[];
-  usernames?: string[];
-  roleSlugs?: string[];
-};
+import { CreateProjectOptions, InviteMemberToProjectOptions } from "../api/types/projects";
 
 export default class ProjectsClient {
   constructor(private apiClient: ProjectsApi) {}

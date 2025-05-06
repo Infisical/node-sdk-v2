@@ -1,21 +1,6 @@
 import { FoldersApi } from "../api/endpoints/folders";
 import { newInfisicalError } from "./errors";
-
-export type CreateFolderOptions = {
-  name: string;
-  path: string;
-  projectId: string;
-  environment: string;
-  description?: string;
-};
-
-export type ListFoldersOptions = {
-  environment: string;
-  projectId: string;
-  path?: string;
-  recursive?: boolean;
-  lastSecretModified?: string;
-};
+import { CreateFolderOptions, ListFoldersOptions } from "../api/types/folders";
 
 export default class FoldersClient {
   constructor(private apiClient: FoldersApi) {}

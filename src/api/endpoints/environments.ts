@@ -9,11 +9,7 @@ export class EnvironmentsApi {
   ): Promise<CreateEnvironmentResponse> {
     return this.apiClient.post<CreateEnvironmentResponse>(
       `/api/v1/workspace/${data.projectId}/environments`,
-      {
-        name: data.name,
-        slug: data.slug,
-        position: data.position,
-      }
+      data
     );
   }
 }

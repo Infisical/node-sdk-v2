@@ -1,3 +1,5 @@
+type SecretType = "shared" | "personal";
+
 export interface Secret {
   id: string;
   workspaceId: string;
@@ -6,7 +8,21 @@ export interface Secret {
   secretValue: string;
   secretComment?: string;
   secretPath?: string;
-  type: "shared" | "personal";
+  secretValueHidden: boolean;
+  secretReminderNote?: string;
+  secretReminderRepeatDays?: number;
+  skipMultilineEncoding?: boolean;
+  folderId?: string;
+  actor?: {
+    actorId?: string;
+    name?: string;
+    actorType?: string;
+    membershipId?: string;
+  }
+  isRotatedSecret: boolean;
+  rotationId?: string;
+  secretMetadata?: Record<string, any>;
+  type: SecretType;
   createdAt: string;
   updatedAt: string;
   version: number;
@@ -29,6 +45,8 @@ export interface ListSecretsResponse {
   imports?: Array<{
     secretPath: string;
     secrets: Secret[];
+    folderId?: string;
+    environment: string;
   }>;
 }
 
@@ -39,7 +57,7 @@ export interface GetSecretRequest {
   expandSecretReferences?: string;
   includeImports?: string;
   secretPath?: string;
-  type?: "shared" | "personal";
+  type?: SecretType;
   version?: number;
   viewSecretValue?: string;
 }
@@ -58,7 +76,7 @@ export interface CreateSecretRequest {
   secretReminderRepeatDays?: number;
   skipMultilineEncoding?: boolean;
   tagIds?: string[];
-  type?: "shared" | "personal";
+  type?: SecretType;
 }
 
 export interface UpdateSecretRequest {
@@ -72,7 +90,7 @@ export interface UpdateSecretRequest {
   secretReminderRepeatDays?: number;
   skipMultilineEncoding?: boolean;
   tagIds?: string[];
-  type?: "shared" | "personal";
+  type?: SecretType;
   metadata?: Record<string, any>;
 }
 
@@ -80,5 +98,58 @@ export interface DeleteSecretRequest {
   workspaceId: string;
   environment: string;
   secretPath?: string;
-  type?: "shared" | "personal";
+  type?: SecretType;
 }
+
+export type ListSecretsOptions = {
+  environment: string;
+  projectId: string;
+  expandSecretReferences?: boolean;
+  includeImports?: boolean;
+  recursive?: boolean;
+  secretPath?: string;
+  tagSlugs?: string[];
+  viewSecretValue?: boolean;
+};
+
+export type GetSecretOptions = {
+  environment: string;
+  secretName: string;
+  expandSecretReferences?: boolean;
+  includeImports?: boolean;
+  secretPath?: string;
+  type?: SecretType;
+  version?: number;
+  projectId: string;
+  viewSecretValue?: boolean;
+};
+
+export type BaseSecretOptions = {
+  environment: string;
+  projectId: string;
+  secretComment?: string;
+  secretPath?: string;
+  secretReminderNote?: string;
+  secretReminderRepeatDays?: number;
+  skipMultilineEncoding?: boolean;
+  tagIds?: string[];
+  type?: SecretType;
+  metadata?: Record<string, any>;
+  secretMetadata?: Record<string, any>[];
+};
+
+export type UpdateSecretOptions = {
+  secretValue?: string;
+  newSecretName?: string;
+} & BaseSecretOptions;
+
+export type CreateSecretOptions = {
+  secretValue: string;
+} & BaseSecretOptions;
+
+export type DeleteSecretOptions = {
+  environment: string;
+  projectId: string;
+  secretPath?: string;
+  type?: SecretType;
+};

@@ -21,7 +21,7 @@
   },
   "author": "Infisical Inc, <daniel@infisical.com>",
   "license": "ISC",
-  "description": "The Infisical SDK provides a convenient way to interact with the Infisical API.",
+  "description": "The Infisical SDK provides a convenient way to programmatically interact with the Infisical API.",
   "devDependencies": {
     "@types/node": "^22.5.1",
     "tsc": "^2.0.4",

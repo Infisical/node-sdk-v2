@@ -21,11 +21,7 @@ export class ProjectsApi {
   ): Promise<InviteMembersResponse> {
     return this.apiClient.post<InviteMembersResponse>(
       `/api/v2/workspace/${data.projectId}/memberships`,
-      {
-        emails: data.emails,
-        usernames: data.usernames,
-        roleSlugs: data.roleSlugs,
-      }
+      data
     );
   }
 }

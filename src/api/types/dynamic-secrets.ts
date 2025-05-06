@@ -87,3 +87,43 @@ export interface RenewLeaseRequest {
 export interface RenewLeaseResponse {
   lease: Lease;
 }
+
+export type CreateDynamicSecretOptions = {
+  provider: TDynamicSecretProvider;
+  defaultTTL: string;
+  maxTTL: string;
+  name: string;
+  projectSlug: string;
+  environmentSlug: string;
+  path?: string;
+  metadata?: Record<string, any>;
+};
+
+export type DeleteDynamicSecretOptions = {
+  environmentSlug: string;
+  projectSlug: string;
+  path?: string;
+  isForced?: boolean;
+};
+
+export type CreateDynamicSecretLeaseOptions = {
+  dynamicSecretName: string;
+  environmentSlug: string;
+  projectSlug: string;
+  path?: string;
+  ttl?: string;
+};
+
+export type DeleteDynamicSecretLeaseOptions = {
+  environmentSlug: string;
+  projectSlug: string;
+  path?: string;
+  isForced?: boolean;
+};
+
+export type RenewDynamicSecretLeaseOptions = {
+  environmentSlug: string;
+  projectSlug: string;
+  path?: string;
+  ttl?: string;
+};

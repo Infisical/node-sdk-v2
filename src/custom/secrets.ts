@@ -1,61 +1,7 @@
 import { SecretsApi } from "../api/endpoints/secrets";
 import { Secret } from "../api/types";
 import { newInfisicalError } from "./errors";
-
-type SecretType = "shared" | "personal";
-
-type ListSecretsOptions = {
-  environment: string;
-  projectId: string;
-  expandSecretReferences?: boolean;
-  includeImports?: boolean;
-  recursive?: boolean;
-  secretPath?: string;
-  tagSlugs?: string[];
-  viewSecretValue?: boolean;
-};
-
-type GetSecretOptions = {
-  environment: string;
-  secretName: string;
-  expandSecretReferences?: boolean;
-  includeImports?: boolean;
-  secretPath?: string;
-  type?: SecretType;
-  version?: number;
-  projectId: string;
-  viewSecretValue?: boolean;
-};
-
-type BaseSecretOptions = {
-	environment: string;
-	projectId: string;
-	secretComment?: string;
-	secretPath?: string;
-	secretReminderNote?: string;
-	secretReminderRepeatDays?: number;
-	skipMultilineEncoding?: boolean;
-	tagIds?: string[];
-	type?: SecretType;
-	metadata?: Record<string, any>;
-	secretMetadata?: Record<string, any>[];
-};
-
-export type UpdateSecretOptions = {
-  secretValue?: string;
-  newSecretName?: string;
-} & BaseSecretOptions;
-
-export type CreateSecretOptions = {
-  secretValue: string;
-} & BaseSecretOptions;
-
-export type DeleteSecretOptions = {
-  environment: string;
-  projectId: string;
-  secretPath?: string;
-  type?: SecretType;
-};
+import { ListSecretsOptions, GetSecretOptions, UpdateSecretOptions, CreateSecretOptions, DeleteSecretOptions } from "../api/types/secrets";
 
 const convertBool = (value?: boolean) => (value ? "true" : "false");
 
@@ -100,6 +46,11 @@ export default class SecretsClient {
     if (imports) {
       for (const imp of imports) {
         for (const importedSecret of imp.secrets) {
+          // CASE: We need to ensure that the imported values don't override the "base" secrets.
+          // Priority order is:
+					// Local/Preset variables -> Actual secrets -> Imported secrets (high->low)
+
+					// Check if the secret already exists in the secrets list
           if (!secrets.find((s) => s.secretKey === importedSecret.secretKey)) {
             secrets.push({
               ...importedSecret,

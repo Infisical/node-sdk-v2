@@ -27,19 +27,11 @@ export const renewToken = async (apiClient: AuthApi, token?: string) => {
 };
 
 export default class AuthClient {
-  #sdkAuthenticator: AuthenticatorFunction;
-  #apiClient: AuthApi;
-  #accessToken?: string;
-
   constructor(
-    authenticator: AuthenticatorFunction,
-    apiInstance: AuthApi,
-    accessToken?: string
-  ) {
-    this.#sdkAuthenticator = authenticator;
-    this.#apiClient = apiInstance;
-    this.#accessToken = accessToken;
-  }
+    private sdkAuthenticator: AuthenticatorFunction,
+    private apiClient: AuthApi,
+    private _accessToken?: string
+  ) {}
 
   awsIamAuth = {
     login: async (options?: AwsAuthLoginOptions) => {
@@ -53,7 +45,7 @@ export default class AuthClient {
         }
 
         const iamRequest = await performAwsIamLogin(await getAwsRegion());
-        const res = await this.#apiClient.awsIamAuthLogin({
+        const res = await this.apiClient.awsIamAuthLogin({
           iamHttpRequestMethod: iamRequest.iamHttpRequestMethod,
           iamRequestBody: Buffer.from(iamRequest.iamRequestBody).toString(
             "base64"
@@ -64,7 +56,7 @@ export default class AuthClient {
           identityId,
         });
 
-        return this.#sdkAuthenticator(res.accessToken);
+        return this.sdkAuthenticator(res.accessToken);
       } catch (err) {
         throw newInfisicalError(err);
       }
@@ -72,10 +64,10 @@ export default class AuthClient {
     renew: async () => {
       try {
         const refreshedToken = await renewToken(
-          this.#apiClient,
-          this.#accessToken
+          this.apiClient,
+          this._accessToken
         );
-        return this.#sdkAuthenticator(refreshedToken.accessToken);
+        return this.sdkAuthenticator(refreshedToken.accessToken);
       } catch (err) {
         throw newInfisicalError(err);
       }
@@ -85,8 +77,8 @@ export default class AuthClient {
   universalAuth = {
     login: async (options: UniversalAuthLoginRequest) => {
       try {
-        const res = await this.#apiClient.universalAuthLogin(options);
-        return this.#sdkAuthenticator(res.accessToken);
+        const res = await this.apiClient.universalAuthLogin(options);
+        return this.sdkAuthenticator(res.accessToken);
       } catch (err) {
         throw newInfisicalError(err);
       }
@@ -94,10 +86,10 @@ export default class AuthClient {
     renew: async () => {
       try {
         const refreshedToken = await renewToken(
-          this.#apiClient,
-          this.#accessToken
+          this.apiClient,
+          this._accessToken
         );
-        return this.#sdkAuthenticator(refreshedToken.accessToken);
+        return this.sdkAuthenticator(refreshedToken.accessToken);
       } catch (err) {
         throw newInfisicalError(err);
       }
@@ -105,6 +97,6 @@ export default class AuthClient {
   };
 
   accessToken = (token: string) => {
-    return this.#sdkAuthenticator(token);
+    return this.sdkAuthenticator(token);
   };
 }

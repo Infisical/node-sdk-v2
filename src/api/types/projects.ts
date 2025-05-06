@@ -41,3 +41,19 @@ export interface Membership {
 export interface InviteMembersResponse {
   memberships: Membership[];
 }
+
+export type CreateProjectOptions = {
+  projectName: string;
+  type: string;
+  projectDescription?: string;
+  slug?: string;
+  template?: string;
+  kmsKeyId?: string;
+};
+
+export type InviteMemberToProjectOptions = {
+  projectId: string;
+  emails?: string[];
+  usernames?: string[];
+  roleSlugs?: string[];
+};

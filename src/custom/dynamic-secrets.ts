@@ -1,46 +1,13 @@
 import { DynamicSecretsApi } from "../api/endpoints/dynamic-secrets";
 import { TDynamicSecretProvider } from "./schemas/dynamic-secrets";
 import { newInfisicalError } from "./errors";
-
-export type CreateDynamicSecretOptions = {
-  provider: TDynamicSecretProvider;
-  defaultTTL: string;
-  maxTTL: string;
-  name: string;
-  projectSlug: string;
-  environmentSlug: string;
-  path?: string;
-  metadata?: Record<string, any>;
-};
-
-export type DeleteDynamicSecretOptions = {
-  environmentSlug: string;
-  projectSlug: string;
-  path?: string;
-  isForced?: boolean;
-};
-
-export type CreateDynamicSecretLeaseOptions = {
-  dynamicSecretName: string;
-  environmentSlug: string;
-  projectSlug: string;
-  path?: string;
-  ttl?: string;
-};
-
-export type DeleteDynamicSecretLeaseOptions = {
-  environmentSlug: string;
-  projectSlug: string;
-  path?: string;
-  isForced?: boolean;
-};
-
-export type RenewDynamicSecretLeaseOptions = {
-  environmentSlug: string;
-  projectSlug: string;
-  path?: string;
-  ttl?: string;
-};
+import {
+  CreateDynamicSecretOptions,
+  DeleteDynamicSecretOptions,
+  CreateDynamicSecretLeaseOptions,
+  DeleteDynamicSecretLeaseOptions,
+  RenewDynamicSecretLeaseOptions,
+} from "../api/types/dynamic-secrets";
 
 export default class DynamicSecretsClient {
   constructor(private apiClient: DynamicSecretsApi) {}

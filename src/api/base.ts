@@ -30,6 +30,7 @@ export class ApiClient {
 
       if (!config._retryCount) config._retryCount = 0;
 
+      // handle rate limits and network errors
       if (
         (error.response?.status === 429 ||
           error.response?.status === undefined) &&

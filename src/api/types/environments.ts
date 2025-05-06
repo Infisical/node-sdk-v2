@@ -16,5 +16,14 @@ export interface CreateEnvironmentRequest {
 }
 
 export type CreateEnvironmentResponse = {
+  message: string;
+  workspace: string;
   environment: Environment;
+};
+
+export type CreateEnvironmentOptions = {
+  name: string;
+  projectId: string;
+  slug: string;
+  position?: number;
 };
