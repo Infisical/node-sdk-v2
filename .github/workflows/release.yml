@@ -28,9 +28,6 @@ jobs:
             - name: Set NPM version
               run: npm version ${{ github.ref_name }} --allow-same-version --no-git-tag-version
 
-            - name: Build API client
-              run: npm run generate-api:infisical
-
             - name: Build SDK
               run: npm run build
 
