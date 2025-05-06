@@ -42,6 +42,10 @@ The SDK methods are organized into the following high-level categories:
 
 1. `auth`: Handles authentication methods.
 2. `secrets`: Manages CRUD operations for secrets.
+3. `dynamicSecrets`: Manages dynamic secrets and leases.
+4. `projects`: Creates and manages projects.
+5. `environments`: Creates and manages environments.
+6. `folders`: Creates and manages folders.
 
 ### `auth`
 
@@ -102,7 +106,6 @@ await client.auth().awsIamAuth.renew();
 ```
 
 
-
 ### `secrets`
 
 This sub-class handles operations related to secrets:
@@ -132,7 +135,7 @@ const allSecrets = await client.secrets().listSecrets({
 - `tagFilters` (string[], optional): Tags to filter secrets.
 
 **Returns:**
-- `ApiV3SecretsRawGet200Response`: The response containing the list of secrets.
+- `ListSecretsResponse`: The response containing the list of secrets.
 
 #### List secrets with imports
 
@@ -159,7 +162,7 @@ const allSecrets = await client.secrets().listSecretsWithImports({
 - `tagFilters` (string[], optional): Tags to filter secrets.
 
 **Returns:**
-- `ApiV1DashboardSecretsOverviewGet200ResponseSecretsInner`: The response containing the list of secrets, with imports.
+- `Secret[]`: Returns the list of secrets objects, with imports.
 
 
 
@@ -195,7 +198,7 @@ const allSecrets = await client.secrets().listSecretsWithImports({
   - `type` (personal | shared, optional): Which type of secret to create.
 
 **Returns:**
-- `ApiV3SecretsRawSecretNamePost200Response`: The response after creating the secret.
+- `CreateSecretResponse`: The response after creating the secret.
 
 #### Update Secret
 
@@ -235,7 +238,7 @@ const updatedSecret = await client.secrets().updateSecret("SECRET_TO_UPDATE", {
   - `metadata` (object, optional): Assign additional details to the secret, accessible through the API.
 
 **Returns:**
-- `ApiV3SecretsRawSecretNamePost200Response`: The response after updating the secret.
+- `UpdateSecretResponse`: The response after updating the secret.
 
 #### Get Secret by Name
 
@@ -266,7 +269,7 @@ const updatedSecret = await client.secrets().updateSecret("SECRET_TO_UPDATE", {
 
 
 **Returns:**
-- `ApiV3SecretsRawSecretNameGet200Response`: The response containing the secret.
+- `Secret`: Returns the secret object.
 
 #### Delete Secret by Name
 
@@ -288,7 +291,7 @@ const deletedSecret = await client.secrets().deleteSecret("SECRET_TO_DELETE", {
   - `type` (personal | shared, optional): The type of secret to delete.
 
 **Returns:**
-- `ApiV3SecretsRawSecretNamePost200Response`: The response after deleting the secret.
+- `DeleteSecretResponse`: The response after deleting the secret.
 
 
 
@@ -338,7 +341,7 @@ console.log(dynamicSecret);
 ```
 
 **Returns:**
-- `ApiV1DynamicSecretsPost200Response['dynamicSecret']`: The response after creating the dynamic secret
+- `DynamicSecret`: The dynamic secret after creating it.
 
 
 #### Delete a dynamic secret
@@ -359,7 +362,7 @@ const deletedDynamicSecret = await client.dynamicSecrets().delete("dynamic-secre
   - `environment` (str): The environment in which to delete the secret.
 
 **Returns:**
-- `ApiV1DynamicSecretsDelete200Response['dynamicSecret']`: The response after deleting the dynamic secret
+- `DynamicSecret`: The dynamic secret after deleting it.
 
 ### `dynamicSecrets.leases`
 In this section you'll learn how to work with dynamic secret leases
@@ -389,7 +392,7 @@ console.log(lease);
 - `ttl` (string, optional): A [vercel/ms](https://github.com/vercel/ms) encoded string representation of how long the lease credentials should be valid for. This will default to the dynamic secret's default TTL if not specified.
 
 **Returns:**
-- `ApiV1DynamicSecretsLeasesPost200Response`: The dynamic secret lease result.
+- `CreateLeaseResponse`: The dynamic secret lease result.
 
 
 #### Delete a lease
@@ -411,7 +414,7 @@ const deletedLease = await client.dynamicSecrets().leases.delete(newLease.lease.
   - `isForced` (bool, optional): Wether or not to forcefully delete the lease. This can't guarantee that the lease will be deleted from the external provider, and is potentially unsafe for sensitive dynamic secrets.
 
 **Returns:**
-- `ApiV1DynamicSecretsLeasesLeaseIdDelete200Response`: The deleted lease result.
+- `DeleteLeaseResponse`: The deleted lease result.
 
 #### Renew a lease
 
@@ -435,7 +438,7 @@ const renewedLease = await client.dynamicSecrets().leases.renew(newLease.lease.i
   - `ttl` (string, optional): A [vercel/ms](https://github.com/vercel/ms) encoded string representation of how long the lease credentials should be valid for. This will default to the dynamic secret's default TTL if not specified.
 
 **Returns:**
-- `ApiV1DynamicSecretsLeasesLeaseIdDelete200Response`: The renewed lease response _(doesn't contain new credentials)_.
+- `RenewLeaseResponse`: The renewed lease response _(doesn't contain new credentials)_.
 
 ### `projects`
 
@@ -461,7 +464,7 @@ const project = await client.projects().create({
 - `kmsKeyId` (string): The ID of the KMS key to use for the project. Will use the Infisical KMS by default.
 
 **Returns:**
-- `ApiV1WorkspaceWorkspaceIdGet200ResponseWorkspace`: The project that was created.
+- `Project`: The project that was created.
 
 
 #### Invite members to a project
@@ -484,7 +487,7 @@ const memberships = await client.projects().inviteMembers({
 - `roleSlugs`: (string[]): An array of role slugs to assign to the members. If not specified, this will default to `member`.
 
 **Returns:**
-- `ApiV1OrganizationAdminProjectsProjectIdGrantAdminAccessPost200ResponseMembership`: An array of the created project memberships.
+- `Membership[]`: An array of the created project memberships.
 
 ### `environments`
 
@@ -506,7 +509,7 @@ const environment = await client.environments().create({
 - `position` (number): An optional position of the environment to be created. The position is used in the Infisical UI to display environments in order. Environments with the lowest position come first.
 
 **Returns:**
-- `ApiV1WorkspaceWorkspaceIdEnvironmentsEnvIdGet200ResponseEnvironment`: The environment that was created.
+- `Environment`: The environment that was created.
 
 #### Create a new folder
 
@@ -528,4 +531,24 @@ const folder = await client.folders().create({
 - `description` (string): An optional folder description.
 
 **Returns:**
-- `ApiV1FoldersPost200ResponseFolder`: The folder that was created.
+- `Folder`: The folder that was created.
+
+#### List folders
+
+```typescript
+const folders = await client.folders().listFolders({
+  environment: "dev",
+  projectId: "<your-project-id>",
+  path: "/foo/bar", // Optional
+  recursive: false // Optional
+});
+```
+
+**Parameters:**
+- `environment` (string): The slug of the environment to list folders within.
+- `projectId` (string): The ID of the project to list folders within.
+- `path` (string): The path to list folders within. Defaults to `/`, which is the root folder.
+- `recursive` (boolean): An optional flag to list folders recursively. Defaults to `false`.
+
+**Returns:**
+- `Folder[]`: An array of folders.
