@@ -1,5 +1,4 @@
 import { SecretsApi } from "../api/endpoints/secrets";
-import { Secret } from "../api/types";
 import { newInfisicalError } from "./errors";
 import { ListSecretsOptions, GetSecretOptions, UpdateSecretOptions, CreateSecretOptions, DeleteSecretOptions } from "../api/types/secrets";
 
