@@ -13,8 +13,6 @@ import EnvironmentsClient from "./custom/environments";
 import ProjectsClient from "./custom/projects";
 import FoldersClient from "./custom/folders";
 
-import * as ApiTypes from "./api/types";
-
 type InfisicalSDKOptions = {
   siteUrl?: string;
 };
@@ -90,10 +88,13 @@ class InfisicalSDK {
 }
 
 // Export main SDK class
-export { InfisicalSDK, ApiTypes };
+export { InfisicalSDK };
+
+export * from './api/types'
 
 // Export types and enums from schemas
 export {
   TDynamicSecretProvider,
   DynamicSecretProviders,
+  SqlProviders,
 } from "./custom/schemas";

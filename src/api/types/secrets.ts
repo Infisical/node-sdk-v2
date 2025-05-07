@@ -1,4 +1,7 @@
-type SecretType = "shared" | "personal";
+export enum SecretType {
+	Shared = "shared",
+	Personal = "personal"
+}
 
 export interface Secret {
   id: string;
