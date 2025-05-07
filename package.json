@@ -7,9 +7,6 @@
     "lib"
   ],
   "scripts": {
-    "generate-api:infisical": "openapi-generator-cli generate -i https://app.infisical.com/api/docs/json -g typescript-axios -o ./src/infisicalapi_client --skip-validate-spec --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,apiPackage=server,modelPackage=model --openapi-normalizer REFACTOR_ALLOF_WITH_PROPERTIES_ONLY=true && npm run post-generate-api",
-    "generate-api:infisical-dev": "openapi-generator-cli generate -i http://localhost:8080/api/docs/json -g typescript-axios -o ./src/infisicalapi_client --skip-validate-spec --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,apiPackage=server,modelPackage=model --openapi-normalizer REFACTOR_ALLOF_WITH_PROPERTIES_ONLY=true && npm run post-generate-api",
-    "post-generate-api": "rm ./src/infisicalapi_client/git_push.sh",
     "build": "tsup src/index.ts --out-dir lib --dts --format cjs,esm --tsconfig tsconfig.json --no-splitting"
   },
   "keywords": [
@@ -20,13 +17,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/infisical/infisical-node-sdk"
+    "url": "git+https://github.com/infisical/infisical-node-sdk.git"
   },
   "author": "Infisical Inc, <daniel@infisical.com>",
   "license": "ISC",
-  "description": "",
+  "description": "The Infisical SDK provides a convenient way to programmatically interact with the Infisical API.",
   "devDependencies": {
-    "@openapitools/openapi-generator-cli": "^2.13.5",
     "@types/node": "^22.5.1",
     "tsc": "^2.0.4",
     "tsup": "^8.2.4"
@@ -36,5 +32,14 @@
     "axios": "^1.7.5",
     "typescript": "^5.5.4",
     "zod": "^3.23.8"
-  }
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "types": "./lib/index.d.ts",
+  "bugs": {
+    "url": "https://github.com/infisical/infisical-node-sdk/issues"
+  },
+  "homepage": "https://github.com/infisical/infisical-node-sdk#readme"
 }

@@ -1,35 +1,37 @@
-import { RawAxiosRequestConfig } from "axios";
-import { DefaultApi as InfisicalApi } from "../infisicalapi_client";
-import type { ApiV1FoldersPostRequest, ApiV1FoldersPost200Response } from "../infisicalapi_client";
+import { FoldersApi } from "../api/endpoints/folders";
 import { newInfisicalError } from "./errors";
-
-export type CreateFolderOptions = {
-	projectId: string;
-} & Omit<ApiV1FoldersPostRequest, "workspaceId" | "directory">;
-export type CreateFolderResult = ApiV1FoldersPost200Response;
+import { CreateFolderOptions, ListFoldersOptions } from "../api/types/folders";
 
 export default class FoldersClient {
-	#apiInstance: InfisicalApi;
-	#requestOptions: RawAxiosRequestConfig | undefined;
-	constructor(apiInstance: InfisicalApi, requestOptions: RawAxiosRequestConfig | undefined) {
-		this.#apiInstance = apiInstance;
-		this.#requestOptions = requestOptions;
-	}
+  constructor(private apiClient: FoldersApi) {}
 
-	create = async (options: CreateFolderOptions): Promise<CreateFolderResult["folder"]> => {
-		try {
-			const res = await this.#apiInstance.apiV1FoldersPost(
-				{
-					apiV1FoldersPostRequest: {
-						...options,
-						workspaceId: options.projectId
-					}
-				},
-				this.#requestOptions
-			);
-			return res.data.folder;
-		} catch (err) {
-			throw newInfisicalError(err);
-		}
-	};
+  create = async (options: CreateFolderOptions) => {
+    try {
+      const res = await this.apiClient.create({
+        name: options.name,
+        path: options.path,
+        workspaceId: options.projectId,
+        environment: options.environment,
+        description: options.description,
+      });
+      return res.folder;
+    } catch (err) {
+      throw newInfisicalError(err);
+    }
+  };
+
+  listFolders = async (options: ListFoldersOptions) => {
+    try {
+      const res = await this.apiClient.listFolders({
+        environment: options.environment,
+        workspaceId: options.projectId,
+        path: options.path,
+        recursive: options.recursive,
+        lastSecretModified: options.lastSecretModified,
+      });
+      return res.folders;
+    } catch (err) {
+      throw newInfisicalError(err);
+    }
+  };
 }
