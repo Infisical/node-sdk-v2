@@ -341,7 +341,7 @@ console.log(dynamicSecret);
 ```
 
 **Returns:**
-- `DynamicSecret`: The dynamic secret after creating it.
+- `DynamicSecret`: The deleted dynamic secret.
 
 
 #### Delete a dynamic secret
