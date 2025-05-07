@@ -341,7 +341,7 @@ console.log(dynamicSecret);
 ```
 
 **Returns:**
-- `DynamicSecret`: The deleted dynamic secret.
+- `DynamicSecret`: The created dynamic secret.
 
 
 #### Delete a dynamic secret
@@ -362,7 +362,7 @@ const deletedDynamicSecret = await client.dynamicSecrets().delete("dynamic-secre
   - `environment` (str): The environment in which to delete the secret.
 
 **Returns:**
-- `DynamicSecret`: The dynamic secret after deleting it.
+- `DynamicSecret`: The deleted dynamic secret.
 
 ### `dynamicSecrets.leases`
 In this section you'll learn how to work with dynamic secret leases
