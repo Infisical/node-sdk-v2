@@ -96,6 +96,12 @@ export default class AuthClient {
     },
   };
 
+  /**
+  * Gets the current access token that is set on the SDK instance
+  * @returns The current access token or null if no access token is set. `null` is returned if the SDK is not authenticated.
+  */
+  getAccessToken = () => this._accessToken || null;
+
   accessToken = (token: string) => {
     return this.sdkAuthenticator(token);
   };
