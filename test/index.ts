@@ -38,7 +38,8 @@ import { InfisicalSDK } from "../src";
 	const folder = await client.folders().create({
 		name: "test-folder",
 		projectId: project.id,
-		environment: environment.slug
+		environment: environment.slug,
+		path: "/"
 	});
 
 	console.log("Inviting member to project");
