@@ -28,7 +28,10 @@
     "tsup": "^8.2.4"
   },
   "dependencies": {
-    "aws-sdk": "2.1311.0",
+    "@aws-crypto/sha256-js": "^5.2.0",
+    "@aws-sdk/credential-providers": "^3.758.0",
+    "@aws-sdk/protocol-http": "^3.370.0",
+    "@aws-sdk/signature-v4": "^3.370.0",
     "axios": "^1.7.5",
     "typescript": "^5.5.4",
     "zod": "^3.23.8"
