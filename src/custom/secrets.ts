@@ -16,7 +16,7 @@ export default class SecretsClient {
 
   listSecrets = async (options: ListSecretsOptions) => {
     try {
-      return await this.apiClient.listSecrets({
+      const res = await this.apiClient.listSecrets({
         workspaceId: options.projectId,
         environment: options.environment,
         expandSecretReferences: convertBool(
@@ -28,6 +28,15 @@ export default class SecretsClient {
         tagSlugs: options.tagSlugs ? options.tagSlugs.join(",") : undefined,
         viewSecretValue: convertBool(options.viewSecretValue ?? true),
       });
+
+      if (options.attachToProcessEnv) {
+				for (const secret of res.secrets) {
+					process.env[secret.secretKey] = secret.secretValue;
+				}
+			}
+
+      return res;
+
     } catch (err) {
       throw newInfisicalError(err);
     }
