@@ -32,7 +32,7 @@
     "@aws-sdk/credential-providers": "^3.758.0",
     "@aws-sdk/protocol-http": "^3.370.0",
     "@aws-sdk/signature-v4": "^3.370.0",
-    "axios": "^1.7.5",
+    "axios": "^1.11.0",
     "typescript": "^5.5.4",
     "zod": "^3.23.8"
   },
