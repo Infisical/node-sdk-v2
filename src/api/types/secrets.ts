@@ -36,7 +36,7 @@ export interface ListSecretsRequest {
   workspaceId: string;
   environment: string;
   expandSecretReferences?: string;
-  includeImports?: string;
+  include_imports?: string;
   recursive?: string;
   secretPath?: string;
   tagSlugs?: string;
