@@ -108,6 +108,7 @@ export type ListSecretsOptions = {
   environment: string;
   projectId: string;
   expandSecretReferences?: boolean;
+  attachToProcessEnv?: boolean;
   includeImports?: boolean;
   recursive?: boolean;
   secretPath?: string;
