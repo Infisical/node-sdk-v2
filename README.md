@@ -4,8 +4,8 @@ The Infisical SDK provides a convenient way to interact with the Infisical API.
 
 ## Deprecation Notice
 
-Please be aware that all versions prior to `3.0.0` are officially fully unsupported.
-Please upgrade to version 3.0.0 or newer in order to recieve the latest updates. 
+Please be aware that all versions prior to `4.0.0` are officially fully unsupported.
+Please upgrade to version 4.0.0 or newer in order to recieve the latest updates. 
 
 ## Installation
 
