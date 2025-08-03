@@ -14,11 +14,52 @@ export interface KmsKey {
     version?: number;
 }
 
+export interface KmsKeyResponse {
+    key: KmsKey;
+}
+
+export interface GetKmsKeyByNameOptions {
+    keyName: string;
+    projectId: string;
+}
+
 export interface ListKmsKeysResponse {
     keys: KmsKey[];
     totalCount: number;
 }
 
+export enum KmsKeyUsage {
+    EncryptDecrypt = "encrypt-decrypt",
+    SignVerify = "sign-verify"
+}
+
+export enum KmsKeyEncryptionAlgorithm {
+    AES256 = "aes-256-gcm",
+    AES128 = "aes-128-gcm",
+    RSA_4096 = "RSA_4096",
+    ECC_NIST_P256 = "ECC_NIST_P256",
+}
+export interface CreateKmsKeyRequest {
+    projectId: string;
+    name: string;
+    description?: string;
+    keyUsage?: KmsKeyUsage;
+    encryptionAlgorithm?: KmsKeyEncryptionAlgorithm;
+}
+
+export type CreateKmsOptions = {
+    projectId: string;
+    name: string;
+    description?: string;
+    keyUsage?: KmsKeyUsage;
+    encryptionAlgorithm?: KmsKeyEncryptionAlgorithm;
+}
+export interface UpdateKmsKeyRequest {
+    keyId: string;
+    name?: string;
+    isDisabled?: boolean;
+    description?: string;
+}
 export interface ListKmsKeyRequest {
     projectId: string;
     offset?: number;

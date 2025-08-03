@@ -1,5 +1,5 @@
 import { KmsApi } from "../api/endpoints/kms";
-import { ListKmsOptions } from "../api/types";
+import { CreateKmsOptions, GetKmsKeyByNameOptions, KmsKeyEncryptionAlgorithm, KmsKeyUsage, ListKmsOptions } from "../api/types";
 import { newInfisicalError } from "./errors";
 
 export default class KmsClient {
@@ -15,6 +15,62 @@ export default class KmsClient {
                 orderDirection: options.orderDirection,
                 search: options.search,
             })
+            return res;
+        } catch (err) {
+            throw newInfisicalError(err);
+        }
+    }
+
+    getKeyById = async (keyId: string) => {
+        try {
+            const res = await this.apiClient.GetKeyById(keyId);
+            return res;
+        } catch (err) {
+            throw newInfisicalError(err);
+        }
+    }
+
+    getKeyByName = async (options: GetKmsKeyByNameOptions) => {
+        try {
+            const res = await this.apiClient.GetKeyByName(options);
+            return res;
+        } catch (err) {
+            throw newInfisicalError(err);
+        }
+    }
+
+    createKey = async (data: CreateKmsOptions) =>{
+        try {
+            const res = await this.apiClient.CreateKey({
+                projectId: data.projectId,
+                name: data.name,
+                description: data.description,
+                keyUsage: data.keyUsage ? data.keyUsage : KmsKeyUsage.EncryptDecrypt,
+                encryptionAlgorithm: data.encryptionAlgorithm ? data.encryptionAlgorithm : KmsKeyEncryptionAlgorithm.AES256,
+            });
+            return res;
+        } catch (err) {
+            throw newInfisicalError(err);
+        }
+    }
+
+    updateKey = async (options: { keyId: string; name?: string; isDisabled?: boolean; description?: string }) => {
+        try {
+            const res = await this.apiClient.updateKey({
+                keyId: options.keyId,
+                name: options.name,
+                isDisabled: options.isDisabled,
+                description: options.description,
+            });
+            return res;
+        } catch (err) {
+            throw newInfisicalError(err);
+        }
+    }
+
+    deleteKey = async (keyId: string) => {
+        try {
+            const res = await this.apiClient.deleteKey(keyId);
             return res;
         } catch (err) {
             throw newInfisicalError(err);
