@@ -1,5 +1,5 @@
 import { ApiClient } from "../base";
-import { CreateKmsKeyRequest, DecryptKmsKeyOptions, DecryptKmsKeyResponse, EncryptKmsKeyOptions, EncryptKmsKeyResponse, GetKmsKeyByNameOptions, KmsKeyResponse, ListKmsKeyRequest, ListKmsKeysResponse, UpdateKmsKeyRequest } from "../types";
+import { CreateKmsKeyRequest, DecryptKmsKeyOptions, DecryptKmsKeyResponse, EncryptKmsKeyOptions, EncryptKmsKeyResponse, GetKmsKeyByNameOptions, KmsKeyResponse, KmsPublicKeyReponse, KmsSignDataOptions, KmsSignDataResponse, KmsSigningAlgorithmsResponse, KmsVerifySignatureOptions, KmsVerifySignatureResponse, ListKmsKeyRequest, ListKmsKeysResponse, UpdateKmsKeyRequest } from "../types";
 
 export class KmsApi {
     constructor(private apiClient: ApiClient){}
@@ -42,4 +42,22 @@ export class KmsApi {
         const { keyId, ciphertext } = options;
         return this.apiClient.post<DecryptKmsKeyResponse>(`/api/v1/kms/keys/${keyId}/decrypt`, { ciphertext });
     }
-}
+
+    async signData(options: KmsSignDataOptions): Promise<KmsSignDataResponse>{
+        const {keyId, ...payloadOptions} = options;
+        return this.apiClient.post<KmsSignDataResponse>(`/api/v1/kms/keys/${keyId}/sign`, payloadOptions);
+    }
+
+    async verifySignature(options: KmsVerifySignatureOptions): Promise<KmsVerifySignatureResponse> {
+        const { keyId, ...payloadOptions } = options;
+        return this.apiClient.post<KmsVerifySignatureResponse>(`/api/v1/kms/keys/${keyId}/verify`, payloadOptions);
+    }
+
+    async getPublicKey(keyId: string): Promise<KmsPublicKeyReponse> {
+        return this.apiClient.get<KmsPublicKeyReponse>(`/api/v1/kms/keys/${keyId}/public-key`);
+    }
+
+    async listSigningAlgorithms(keyId: string): Promise<KmsSigningAlgorithmsResponse> {
+        return this.apiClient.get<KmsSigningAlgorithmsResponse>(`/api/v1/kms/keys/${keyId}/signing-algorithms`);
+    }
+}   

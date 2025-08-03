@@ -1,5 +1,5 @@
 import { KmsApi } from "../api/endpoints/kms";
-import { CreateKmsOptions, DecryptKmsKeyOptions, EncryptKmsKeyOptions, GetKmsKeyByNameOptions, KmsKeyEncryptionAlgorithm, KmsKeyUsage, ListKmsOptions } from "../api/types";
+import { CreateKmsOptions, DecryptKmsKeyOptions, EncryptKmsKeyOptions, GetKmsKeyByNameOptions, KmsKeyEncryptionAlgorithm, KmsKeyUsage, KmsSignDataOptions, KmsVerifySignatureOptions, ListKmsOptions } from "../api/types";
 import { newInfisicalError } from "./errors";
 
 export default class KmsClient {
@@ -96,6 +96,53 @@ export default class KmsClient {
                 ciphertext: options.ciphertext,
             });
             res.plaintext = Buffer.from(res.plaintext, 'base64').toString('utf-8'); 
+            return res;
+        } catch (err) {
+            throw newInfisicalError(err);
+        }
+    }
+
+    signData = async (options: KmsSignDataOptions) => {
+        try {
+            const res = await this.apiClient.signData({
+                keyId: options.keyId,
+                signingAlgorithm: options.signingAlgorithm,
+                data: Buffer.from(options.data).toString('base64'),
+                isDigest: options.isDigest ? options.isDigest : false,
+            });
+            return res;
+        } catch (err) {
+            throw newInfisicalError(err);
+        }
+    }
+
+    verifySignature = async (options: KmsVerifySignatureOptions ) => {
+        try {
+            const res = await this.apiClient.verifySignature({
+                keyId: options.keyId,
+                signature: Buffer.from(options.signature).toString('base64'),
+                signingAlgorithm: options.signingAlgorithm,
+                data: Buffer.from(options.data).toString('base64'),
+                isDigest: options.isDigest ? options.isDigest : false,
+            });
+            return res;
+        } catch (err) {
+            throw newInfisicalError(err);
+        }
+    }  
+
+    getPublicKey = async (keyId: string) => {
+        try {
+            const res = await this.apiClient.getPublicKey(keyId);
+            return res;
+        } catch (err) {
+            throw newInfisicalError(err);
+        }
+    }
+
+    listSigningAlgorithms = async (keyId: string) => {
+        try {
+            const res = await this.apiClient.listSigningAlgorithms(keyId);
             return res;
         } catch (err) {
             throw newInfisicalError(err);

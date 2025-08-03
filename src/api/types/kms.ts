@@ -93,3 +93,50 @@ export interface EncryptKmsKeyResponse {
 export interface DecryptKmsKeyResponse {
     plaintext: string;  
 }
+
+export enum KmsSigningAlgorithm{
+    RSASSA_PSS_SHA_512 = "RSASSA_PSS_SHA_512",
+    RSASSA_PSS_SHA_384 = "RSASSA_PSS_SHA_384",
+    RSASSA_PSS_SHA_256 = "RSASSA_PSS_SHA_256",
+    RSASSA_PKCS1_V1_5_SHA_512 = "RSASSA_PKCS1_V1_5_SHA_512",
+    RSASSA_PKCS1_V1_5_SHA_384 = "RSASSA_PKCS1_V1_5_SHA_384",
+    RSASSA_PKCS1_V1_5_SHA_256 = "RSASSA_PKCS1_V1_5_SHA_256",
+    ECDSA_SHA_512 = "ECDSA_SHA_512",
+    ECDSA_SHA_384 = "ECDSA_SHA_384",
+    ECDSA_SHA_256 = "ECDSA_SHA_256",
+}
+
+export interface KmsSignDataOptions {
+    keyId: string;
+    signingAlgorithm: KmsSigningAlgorithm;
+    data: string;
+    isDigest?:boolean;
+}
+
+export interface KmsSignDataResponse {
+    signature: string;
+    keyId: string;
+    signingAlgorithm: KmsSigningAlgorithm;
+}
+
+export interface KmsVerifySignatureOptions {
+    keyId: string;
+    data: string;
+    signature: string;
+    signingAlgorithm: KmsSigningAlgorithm;
+    isDigest?: boolean;
+}
+
+export interface KmsVerifySignatureResponse {
+    signatureValid: boolean;
+    keyId: string;
+    signingAlgorithm: KmsSigningAlgorithm;
+}
+
+export interface KmsPublicKeyReponse {
+    publicKey: string;
+}
+
+export interface KmsSigningAlgorithmsResponse {
+    signingAlgorithms: KmsSigningAlgorithm[];
+}
