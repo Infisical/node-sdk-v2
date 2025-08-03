@@ -6,6 +6,7 @@ export * from "./dynamic-secrets";
 export * from "./environments";
 export * from "./projects";
 export * from "./folders";
+export * from "./kms";
 
 export interface ApiResponse<T> {
   statusCode: number;

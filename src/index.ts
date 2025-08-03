@@ -5,6 +5,7 @@ import { DynamicSecretsApi } from "./api/endpoints/dynamic-secrets";
 import { EnvironmentsApi } from "./api/endpoints/environments";
 import { ProjectsApi } from "./api/endpoints/projects";
 import { FoldersApi } from "./api/endpoints/folders";
+import { KmsApi } from "./api/endpoints/kms";
 
 import SecretsClient from "./custom/secrets";
 import AuthClient from "./custom/auth";
@@ -12,6 +13,7 @@ import DynamicSecretsClient from "./custom/dynamic-secrets";
 import EnvironmentsClient from "./custom/environments";
 import ProjectsClient from "./custom/projects";
 import FoldersClient from "./custom/folders";
+import KmsClient from "./custom/kms";
 
 type InfisicalSDKOptions = {
   siteUrl?: string;
@@ -27,6 +29,7 @@ class InfisicalSDK {
   private environmentsApi: EnvironmentsApi;
   private projectsApi: ProjectsApi;
   private foldersApi: FoldersApi;
+  private kmsApi : KmsApi
 
   // Domain clients
   private authClient: AuthClient;
@@ -35,6 +38,7 @@ class InfisicalSDK {
   private environmentsClient: EnvironmentsClient;
   private projectsClient: ProjectsClient;
   private foldersClient: FoldersClient;
+  private kmsClient: KmsClient;
 
   constructor(options?: InfisicalSDKOptions) {
     const baseURL = options?.siteUrl || "https://app.infisical.com";
@@ -49,6 +53,7 @@ class InfisicalSDK {
     this.environmentsApi = new EnvironmentsApi(this.apiClient);
     this.projectsApi = new ProjectsApi(this.apiClient);
     this.foldersApi = new FoldersApi(this.apiClient);
+    this.kmsApi = new KmsApi(this.apiClient);
 
     // Initialize domain clients
     this.authClient = new AuthClient(
@@ -62,6 +67,7 @@ class InfisicalSDK {
     this.environmentsClient = new EnvironmentsClient(this.environmentsApi);
     this.projectsClient = new ProjectsClient(this.projectsApi);
     this.foldersClient = new FoldersClient(this.foldersApi);
+    this.kmsClient = new KmsClient(this.kmsApi);
   }
 
   private authenticate(accessToken: string) {
@@ -85,6 +91,7 @@ class InfisicalSDK {
   folders = () => this.foldersClient;
   dynamicSecrets = () => this.dynamicSecretsClient;
   auth = () => this.authClient;
+  kms = () => this.kmsClient;
 }
 
 // Export main SDK class
