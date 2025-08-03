@@ -77,3 +77,19 @@ export type ListKmsOptions = {
     orderDirection?: "asc" | "desc";
     search?: string;
 }
+
+export interface EncryptKmsKeyOptions {
+    keyId: string;
+    plaintext: string;
+}
+
+export interface DecryptKmsKeyOptions {
+    keyId: string;
+    ciphertext: string;
+}
+export interface EncryptKmsKeyResponse {
+    ciphertext: string;
+}
+export interface DecryptKmsKeyResponse {
+    plaintext: string;  
+}

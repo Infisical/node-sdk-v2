@@ -1,5 +1,5 @@
 import { ApiClient } from "../base";
-import { CreateKmsKeyRequest, GetKmsKeyByNameOptions, KmsKeyResponse, ListKmsKeyRequest, ListKmsKeysResponse, UpdateKmsKeyRequest } from "../types";
+import { CreateKmsKeyRequest, DecryptKmsKeyOptions, DecryptKmsKeyResponse, EncryptKmsKeyOptions, EncryptKmsKeyResponse, GetKmsKeyByNameOptions, KmsKeyResponse, ListKmsKeyRequest, ListKmsKeysResponse, UpdateKmsKeyRequest } from "../types";
 
 export class KmsApi {
     constructor(private apiClient: ApiClient){}
@@ -31,5 +31,15 @@ export class KmsApi {
 
     async deleteKey(keyId: string): Promise<KmsKeyResponse> {
         return this.apiClient.delete<KmsKeyResponse>(`/api/v1/kms/keys/${keyId}`);
+    }
+
+    async encryptData(options: EncryptKmsKeyOptions): Promise<EncryptKmsKeyResponse>{
+        const { keyId, plaintext } = options;
+        return this.apiClient.post<EncryptKmsKeyResponse>(`/api/v1/kms/keys/${keyId}/encrypt`, { plaintext });
+    }
+
+    async decryptData(options: DecryptKmsKeyOptions): Promise<DecryptKmsKeyResponse>{
+        const { keyId, ciphertext } = options;
+        return this.apiClient.post<DecryptKmsKeyResponse>(`/api/v1/kms/keys/${keyId}/decrypt`, { ciphertext });
     }
 }

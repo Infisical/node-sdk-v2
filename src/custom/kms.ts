@@ -1,5 +1,5 @@
 import { KmsApi } from "../api/endpoints/kms";
-import { CreateKmsOptions, GetKmsKeyByNameOptions, KmsKeyEncryptionAlgorithm, KmsKeyUsage, ListKmsOptions } from "../api/types";
+import { CreateKmsOptions, DecryptKmsKeyOptions, EncryptKmsKeyOptions, GetKmsKeyByNameOptions, KmsKeyEncryptionAlgorithm, KmsKeyUsage, ListKmsOptions } from "../api/types";
 import { newInfisicalError } from "./errors";
 
 export default class KmsClient {
@@ -71,6 +71,31 @@ export default class KmsClient {
     deleteKey = async (keyId: string) => {
         try {
             const res = await this.apiClient.deleteKey(keyId);
+            return res;
+        } catch (err) {
+            throw newInfisicalError(err);
+        }
+    }
+
+    encryptData = async (options: EncryptKmsKeyOptions) => {
+        try {
+            const res = await this.apiClient.encryptData({
+                keyId: options.keyId,
+                plaintext: Buffer.from(options.plaintext).toString('base64'), 
+            });
+            return res;
+        } catch (err) {
+            throw newInfisicalError(err);
+        }
+    }
+
+    decryptData = async (options: DecryptKmsKeyOptions) => {
+        try {
+            const res = await this.apiClient.decryptData({
+                keyId: options.keyId,
+                ciphertext: options.ciphertext,
+            });
+            res.plaintext = Buffer.from(res.plaintext, 'base64').toString('utf-8'); 
             return res;
         } catch (err) {
             throw newInfisicalError(err);
