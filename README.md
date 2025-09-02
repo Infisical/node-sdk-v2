@@ -2,7 +2,7 @@
   <img width="300" src="/resources/logo.svg#gh-dark-mode-only" alt="infisical">
 </h1>
 <p align="center">
-  <p align="center"><b>Infisical Node JS SDK</b></p>
+  <p align="center"><b>Infisical Node.JS SDK</b></p>
 <h4 align="center">
   <a href="https://infisical.com/slack">Slack</a> |
   <a href="https://infisical.com/">Infisical Cloud</a> |
@@ -14,9 +14,6 @@
 <h4 align="center">
   <a href="https://github.com/Infisical/infisical/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="Infisical is released under the MIT license." />
-  </a>
-  <a href="https://github.com/infisical/infisical/blob/main/CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen" alt="PRs welcome!" />
   </a>
   <a href="https://github.com/Infisical/infisical/issues">
     <img src="https://img.shields.io/github/commit-activity/m/infisical/infisical" alt="git commit activity" />
@@ -34,7 +31,7 @@
 **[Infisical](https://infisical.com)** is the open source secret management platform that teams use to centralize their secrets like API keys, database credentials, and configurations.
 
 ## Documentation
-You can find the documentation for the Node JS SDK on our [SDK documentation page](https://infisical.com/docs/sdks/languages/node)
+You can find the documentation for the Node.JS SDK on our [SDK documentation page](https://infisical.com/docs/sdks/languages/node)
 
 ## Security
 
