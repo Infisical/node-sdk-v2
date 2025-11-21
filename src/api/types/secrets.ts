@@ -1,6 +1,6 @@
 export enum SecretType {
-	Shared = "shared",
-	Personal = "personal"
+  Shared = "shared",
+  Personal = "personal",
 }
 
 export interface Secret {
@@ -21,7 +21,7 @@ export interface Secret {
     name?: string;
     actorType?: string;
     membershipId?: string;
-  }
+  };
   isRotatedSecret: boolean;
   rotationId?: string;
   secretMetadata?: Record<string, any>;

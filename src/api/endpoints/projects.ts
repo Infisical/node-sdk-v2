@@ -11,17 +11,17 @@ export class ProjectsApi {
 
   async create(data: CreateProjectRequest): Promise<CreateProjectResponse> {
     return this.apiClient.post<CreateProjectResponse>(
-      "/api/v2/workspace",
-      data
+      "api/v2/workspace",
+      data,
     );
   }
 
   async inviteMembers(
-    data: InviteMembersRequest
+    data: InviteMembersRequest,
   ): Promise<InviteMembersResponse> {
     return this.apiClient.post<InviteMembersResponse>(
-      `/api/v2/workspace/${data.projectId}/memberships`,
-      data
+      `api/v2/workspace/${data.projectId}/memberships`,
+      data,
     );
   }
 }

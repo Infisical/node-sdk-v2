@@ -1,48 +1,50 @@
 {
   "name": "@infisical/sdk",
   "version": "0.0.0",
-  "main": "./lib/index.js",
   "private": false,
-  "files": [
-    "lib"
-  ],
-  "scripts": {
-    "build": "tsup src/index.ts --out-dir lib --dts --format cjs,esm --tsconfig tsconfig.json --no-splitting"
-  },
+  "description": "The Infisical SDK provides a convenient way to programmatically interact with the Infisical API.",
   "keywords": [
     "infisical",
     "open-source",
     "sdk",
     "typescript"
   ],
+  "homepage": "https://github.com/infisical/infisical-node-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/infisical/infisical-node-sdk/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/infisical/infisical-node-sdk.git"
   },
-  "author": "Infisical Inc, <daniel@infisical.com>",
   "license": "ISC",
-  "description": "The Infisical SDK provides a convenient way to programmatically interact with the Infisical API.",
-  "devDependencies": {
-    "@types/node": "^22.5.1",
-    "tsc": "^2.0.4",
-    "tsup": "^8.2.4"
+  "author": "Infisical Inc, <daniel@infisical.com>",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --out-dir lib --dts --format cjs,esm --tsconfig tsconfig.json --no-splitting"
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",
     "@aws-sdk/credential-providers": "3.600.0",
     "@aws-sdk/protocol-http": "^3.370.0",
     "@aws-sdk/signature-v4": "^3.370.0",
-    "axios": "^1.11.0",
+    "ky": "^1.14.0",
+    "node-fetch": "^2.7.0",
     "typescript": "^5.5.4",
     "zod": "^3.23.8"
   },
-  "directories": {
-    "lib": "lib",
-    "test": "test"
-  },
-  "types": "./lib/index.d.ts",
-  "bugs": {
-    "url": "https://github.com/infisical/infisical-node-sdk/issues"
-  },
-  "homepage": "https://github.com/infisical/infisical-node-sdk#readme"
+  "devDependencies": {
+    "@types/node": "^22.5.1",
+    "@types/node-fetch": "^2.6.13",
+    "tsc": "^2.0.4",
+    "tsup": "^8.2.4"
+  }
 }

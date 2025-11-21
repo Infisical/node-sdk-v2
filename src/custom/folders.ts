@@ -16,7 +16,7 @@ export default class FoldersClient {
       });
       return res.folder;
     } catch (err) {
-      throw newInfisicalError(err);
+      throw await newInfisicalError(err);
     }
   };
 
@@ -31,7 +31,7 @@ export default class FoldersClient {
       });
       return res.folders;
     } catch (err) {
-      throw newInfisicalError(err);
+      throw await newInfisicalError(err);
     }
   };
 }

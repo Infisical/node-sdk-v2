@@ -1,4 +1,4 @@
-import { Secret } from "./secrets";
+import type { Secret } from "./secrets";
 
 export * from "./auth";
 export * from "./secrets";

@@ -1,6 +1,12 @@
 import { SecretsApi } from "../api/endpoints/secrets";
 import { newInfisicalError } from "./errors";
-import { ListSecretsOptions, GetSecretOptions, UpdateSecretOptions, CreateSecretOptions, DeleteSecretOptions } from "../api/types/secrets";
+import {
+  ListSecretsOptions,
+  GetSecretOptions,
+  UpdateSecretOptions,
+  CreateSecretOptions,
+  DeleteSecretOptions,
+} from "../api/types/secrets";
 
 const convertBool = (value?: boolean) => (value ? "true" : "false");
 
@@ -14,44 +20,51 @@ const defaultBoolean = (value?: boolean, defaultValue: boolean = false) => {
 export default class SecretsClient {
   constructor(private apiClient: SecretsApi) {}
 
-	listSecrets = async (options: ListSecretsOptions) => {
-		try {
-			const res = await this.apiClient.listSecrets({
-				workspaceId: options.projectId,
-				environment: options.environment,
-				expandSecretReferences: convertBool(defaultBoolean(options.expandSecretReferences, true)),
-				include_imports: convertBool(options.includeImports),
-				recursive: convertBool(options.recursive),
-				secretPath: options.secretPath,
-				tagSlugs: options.tagSlugs ? options.tagSlugs.join(",") : undefined,
-				viewSecretValue: convertBool(options.viewSecretValue ?? true)
-			});
+  listSecrets = async (options: ListSecretsOptions) => {
+    try {
+      const res = await this.apiClient.listSecrets({
+        workspaceId: options.projectId,
+        environment: options.environment,
+        expandSecretReferences: convertBool(
+          defaultBoolean(options.expandSecretReferences, true),
+        ),
+        include_imports: convertBool(options.includeImports),
+        recursive: convertBool(options.recursive),
+        secretPath: options.secretPath,
+        tagSlugs: options.tagSlugs ? options.tagSlugs.join(",") : undefined,
+        viewSecretValue: convertBool(options.viewSecretValue ?? true),
+      });
 
-			if (options.attachToProcessEnv) {
-				let includedSecrets = res.secrets;
-				if (res.imports?.length) {
-					for (const imp of res.imports) {
-						for (const importSecret of imp.secrets) {
-							if (!includedSecrets.find(includedSecret => includedSecret.secretKey === importSecret.secretKey)) {
-								includedSecrets.push(importSecret);
-							}
-						}
-					}
-				}
+      if (options.attachToProcessEnv) {
+        let includedSecrets = res.secrets;
+        if (res.imports?.length) {
+          for (const imp of res.imports) {
+            for (const importSecret of imp.secrets) {
+              if (
+                !includedSecrets.find(
+                  (includedSecret) =>
+                    includedSecret.secretKey === importSecret.secretKey,
+                )
+              ) {
+                includedSecrets.push(importSecret);
+              }
+            }
+          }
+        }
 
-				for (const secret of includedSecrets) {
-					process.env[secret.secretKey] = secret.secretValue;
-				}
-			}
+        for (const secret of includedSecrets) {
+          process.env[secret.secretKey] = secret.secretValue;
+        }
+      }
 
-			return res;
-		} catch (err) {
-			throw newInfisicalError(err);
-		}
-	};
+      return res;
+    } catch (err) {
+      throw await newInfisicalError(err);
+    }
+  };
 
   listSecretsWithImports = async (
-    options: Omit<ListSecretsOptions, "includeImports">
+    options: Omit<ListSecretsOptions, "includeImports">,
   ) => {
     const res = await this.listSecrets({
       ...options,
@@ -64,9 +77,9 @@ export default class SecretsClient {
         for (const importedSecret of imp.secrets) {
           // CASE: We need to ensure that the imported values don't override the "base" secrets.
           // Priority order is:
-					// Local/Preset variables -> Actual secrets -> Imported secrets (high->low)
+          // Local/Preset variables -> Actual secrets -> Imported secrets (high->low)
 
-					// Check if the secret already exists in the secrets list
+          // Check if the secret already exists in the secrets list
           if (!secrets.find((s) => s.secretKey === importedSecret.secretKey)) {
             secrets.push({
               ...importedSecret,
@@ -90,7 +103,7 @@ export default class SecretsClient {
         workspaceId: options.projectId,
         environment: options.environment,
         expandSecretReferences: convertBool(
-          defaultBoolean(options.expandSecretReferences, true)
+          defaultBoolean(options.expandSecretReferences, true),
         ),
         includeImports: convertBool(options.includeImports),
         secretPath: options.secretPath,
@@ -100,7 +113,7 @@ export default class SecretsClient {
       });
       return res.secret;
     } catch (err) {
-      throw newInfisicalError(err);
+      throw await newInfisicalError(err);
     }
   };
 
@@ -121,7 +134,7 @@ export default class SecretsClient {
         metadata: options.metadata,
       });
     } catch (err) {
-      throw newInfisicalError(err);
+      throw await newInfisicalError(err);
     }
   };
 
@@ -140,7 +153,7 @@ export default class SecretsClient {
         type: options.type,
       });
     } catch (err) {
-      throw newInfisicalError(err);
+      throw await newInfisicalError(err);
     }
   };
 
@@ -153,7 +166,7 @@ export default class SecretsClient {
         type: options.type,
       });
     } catch (err) {
-      throw newInfisicalError(err);
+      throw await newInfisicalError(err);
     }
   };
 }

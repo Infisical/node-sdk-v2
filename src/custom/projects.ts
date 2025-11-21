@@ -1,6 +1,9 @@
 import { ProjectsApi } from "../api/endpoints/projects";
 import { newInfisicalError } from "./errors";
-import { CreateProjectOptions, InviteMemberToProjectOptions } from "../api/types/projects";
+import {
+  CreateProjectOptions,
+  InviteMemberToProjectOptions,
+} from "../api/types/projects";
 
 export default class ProjectsClient {
   constructor(private apiClient: ProjectsApi) {}
@@ -10,7 +13,7 @@ export default class ProjectsClient {
       const res = await this.apiClient.create(options);
       return res.project;
     } catch (err) {
-      throw newInfisicalError(err);
+      throw await newInfisicalError(err);
     }
   };
 
@@ -23,7 +26,7 @@ export default class ProjectsClient {
       const res = await this.apiClient.inviteMembers(options);
       return res.memberships;
     } catch (err) {
-      throw newInfisicalError(err);
+      throw await newInfisicalError(err);
     }
   };
 }

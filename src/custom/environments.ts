@@ -10,7 +10,7 @@ export default class EnvironmentsClient {
       const res = await this.apiClient.create(options);
       return res.environment;
     } catch (err) {
-      throw newInfisicalError(err);
+      throw await newInfisicalError(err);
     }
   };
 }

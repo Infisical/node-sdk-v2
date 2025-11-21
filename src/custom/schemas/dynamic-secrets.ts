@@ -172,7 +172,7 @@ const DynamicSecretMongoAtlasSchema = z.object({
     .trim()
     .min(1)
     .describe(
-      "Unique 24-hexadecimal digit string that identifies your project. This is same as project id"
+      "Unique 24-hexadecimal digit string that identifies your project. This is same as project id",
     ),
   roles: z
     .object({
@@ -188,7 +188,7 @@ const DynamicSecretMongoAtlasSchema = z.object({
         .string()
         .min(1)
         .describe(
-          ' Enum: "atlasAdmin" "backup" "clusterMonitor" "dbAdmin" "dbAdminAnyDatabase" "enableSharding" "read" "readAnyDatabase" "readWrite" "readWriteAnyDatabase" "<a custom role name>".Human-readable label that identifies a group of privileges assigned to a database user. This value can either be a built-in role or a custom role.'
+          ' Enum: "atlasAdmin" "backup" "clusterMonitor" "dbAdmin" "dbAdminAnyDatabase" "enableSharding" "read" "readAnyDatabase" "readWrite" "readWriteAnyDatabase" "<a custom role name>".Human-readable label that identifies a group of privileges assigned to a database user. This value can either be a built-in role or a custom role.',
         ),
     })
     .array()
@@ -199,13 +199,13 @@ const DynamicSecretMongoAtlasSchema = z.object({
         .string()
         .min(1)
         .describe(
-          "Human-readable label that identifies the cluster or MongoDB Atlas Data Lake that this database user can access."
+          "Human-readable label that identifies the cluster or MongoDB Atlas Data Lake that this database user can access.",
         ),
       type: z
         .string()
         .min(1)
         .describe(
-          "Category of resource that this database user can access. Enum: CLUSTER, DATA_LAKE, STREAM"
+          "Category of resource that this database user can access. Enum: CLUSTER, DATA_LAKE, STREAM",
         ),
     })
     .array(),
@@ -223,7 +223,7 @@ const DynamicSecretMongoDBSchema = z.object({
     .array()
     .min(1)
     .describe(
-      'Enum: "atlasAdmin" "backup" "clusterMonitor" "dbAdmin" "dbAdminAnyDatabase" "enableSharding" "read" "readAnyDatabase" "readWrite" "readWriteAnyDatabase" "<a custom role name>".Human-readable label that identifies a group of privileges assigned to a database user. This value can either be a built-in role or a custom role.'
+      'Enum: "atlasAdmin" "backup" "clusterMonitor" "dbAdmin" "dbAdminAnyDatabase" "enableSharding" "read" "readAnyDatabase" "readWrite" "readWriteAnyDatabase" "<a custom role name>".Human-readable label that identifies a group of privileges assigned to a database user. This value can either be a built-in role or a custom role.',
     ),
 });
 

@@ -1,93 +1,62 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import ky, { type Options, type KyInstance } from "ky";
 
 export interface ApiClientConfig {
   baseURL: string;
-  headers?: Record<string, string>;
+  headers?: Options["headers"];
   timeout?: number;
 }
 
 export class ApiClient {
-  private client: AxiosInstance;
+  private client: KyInstance;
 
   constructor(config: ApiClientConfig) {
-    this.client = axios.create({
-      baseURL: config.baseURL,
+    this.client = ky.create({
+      prefixUrl: config.baseURL,
       headers: config.headers || {},
       timeout: config.timeout || 10000,
-    });
-
-    this.setupRetryInterceptor();
-  }
-
-  private setupRetryInterceptor() {
-    const maxRetries = 4;
-    const initialRetryDelay = 1000;
-    const backoffFactor = 2;
-
-    this.client.interceptors.response.use(null, (error) => {
-      const config = error?.config;
-      if (!config) return Promise.reject(error);
-
-      if (!config._retryCount) config._retryCount = 0;
-
-      // handle rate limits and network errors
-      if (
-        (error.response?.status === 429 ||
-          error.response?.status === undefined) &&
-        config._retryCount < maxRetries
-      ) {
-        config._retryCount++;
-        const baseDelay =
-          initialRetryDelay * Math.pow(backoffFactor, config._retryCount - 1);
-        const jitter = baseDelay * 0.2;
-        const exponentialDelay = baseDelay + (Math.random() * 2 - 1) * jitter;
-
-        return new Promise((resolve) => {
-          setTimeout(() => resolve(this.client(config)), exponentialDelay);
-        });
-      }
-
-      return Promise.reject(error);
+      retry: {
+        limit: 4,
+        methods: ['get', 'post', 'put', 'delete', 'patch'],
+        statusCodes: [429],
+        delay: attemptCount => 1000 * Math.pow(2, attemptCount - 1),
+        jitter: (delay) => {
+          const jitterAmount = delay * 0.2;
+          return delay + (Math.random() * 2 - 1) * jitterAmount;
+        },
+        retryOnTimeout: true, // to match network error behavior
+      },
     });
   }
 
   public setAccessToken(token: string) {
-    this.client.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    this.client = this.client.extend({
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   }
 
-  public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response: AxiosResponse<T> = await this.client.get(url, config);
-    return response.data;
+  public async get<T>(url: string, config?: Options): Promise<T> {
+    return await this.client.get(url, config).json<T>();
   }
 
-  public async post<T>(
+  public async post<T, TData = unknown>(
     url: string,
-    data?: any,
-    config?: AxiosRequestConfig
+    data?: TData,
+    config?: Options,
   ): Promise<T> {
-    const response: AxiosResponse<T> = await this.client.post(
-      url,
-      data,
-      config
-    );
-    return response.data;
+    return await this.client.post(url, { ...config, json: data }).json<T>();
   }
 
-  public async patch<T>(
+  public async patch<T, TData = unknown>(
     url: string,
-    data?: any,
-    config?: AxiosRequestConfig
+    data?: TData,
+    config?: Options,
   ): Promise<T> {
-    const response: AxiosResponse<T> = await this.client.patch(
-      url,
-      data,
-      config
-    );
-    return response.data;
+    return await this.client.patch(url, { json: data, ...config }).json<T>();
   }
 
-  public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response: AxiosResponse<T> = await this.client.delete(url, config);
-    return response.data;
+  public async delete<T, TData = unknown>(url: string, data?: TData, config?: Options): Promise<T> {
+    return await this.client.delete(url, { json: data, ...config }).json<T>();
   }
 }
