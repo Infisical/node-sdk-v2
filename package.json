@@ -36,6 +36,9 @@
     "typescript": "^5.5.4",
     "zod": "^3.23.8"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "directories": {
     "lib": "lib",
     "test": "test"
