@@ -33,6 +33,7 @@ If you’re working with Node.js, the official Infisical Node.js SDK package is 
 | SDK version | Node.js version |
 |-------------|-----------------|
 | >= v5       | >= 20           |
+| < v5        | >= 14           |
 
 Starting from **v5**, the SDK requires **Node.js 20 or higher** due to updated AWS SDK dependencies.
 
