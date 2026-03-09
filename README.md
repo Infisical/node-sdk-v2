@@ -28,6 +28,15 @@
 
 If you’re working with Node.js, the official Infisical Node.js SDK package is the easiest way to fetch and work with secrets for your application. You can read the documentation [here](https://infisical.com/docs/sdks/languages/node).
 
+## Requirements
+
+| SDK version | Node.js version |
+|-------------|-----------------|
+| >= v5       | >= 20           |
+| <= v4       | >= 14           |
+
+Starting from **v5**, the SDK requires **Node.js 20 or higher** due to updated AWS SDK dependencies.
+
 ## Documentation
 You can find the documentation for the Node.js SDK on our [SDK documentation page](https://infisical.com/docs/sdks/languages/node).
 
