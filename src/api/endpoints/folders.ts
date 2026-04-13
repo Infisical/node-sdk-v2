@@ -10,7 +10,7 @@ export class FoldersApi {
 
   async listFolders(queryParams: ListFoldersRequest): Promise<ListFoldersResponse> {
     return this.apiClient.get<ListFoldersResponse>("/api/v1/folders", {
-      params: queryParams
+      searchParams: { ...queryParams }
     });
   }
 }

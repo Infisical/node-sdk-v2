@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import ky, { KyInstance, Options as KyOptions } from "ky";
 
 export interface ApiClientConfig {
   baseURL: string;
@@ -7,87 +7,69 @@ export interface ApiClientConfig {
 }
 
 export class ApiClient {
-  private client: AxiosInstance;
+  private client: KyInstance;
 
   constructor(config: ApiClientConfig) {
-    this.client = axios.create({
-      baseURL: config.baseURL,
-      headers: config.headers || {},
-      timeout: config.timeout || 10000,
-    });
-
-    this.setupRetryInterceptor();
-  }
-
-  private setupRetryInterceptor() {
     const maxRetries = 4;
     const initialRetryDelay = 1000;
     const backoffFactor = 2;
 
-    this.client.interceptors.response.use(null, (error) => {
-      const config = error?.config;
-      if (!config) return Promise.reject(error);
-
-      if (!config._retryCount) config._retryCount = 0;
-
-      // handle rate limits and network errors
-      if (
-        (error.response?.status === 429 ||
-          error.response?.status === undefined) &&
-        config._retryCount < maxRetries
-      ) {
-        config._retryCount++;
-        const baseDelay =
-          initialRetryDelay * Math.pow(backoffFactor, config._retryCount - 1);
-        const jitter = baseDelay * 0.2;
-        const exponentialDelay = baseDelay + (Math.random() * 2 - 1) * jitter;
-
-        return new Promise((resolve) => {
-          setTimeout(() => resolve(this.client(config)), exponentialDelay);
-        });
+    this.client = ky.create({
+      baseUrl: config.baseURL,
+      headers: config.headers || {},
+      timeout: config.timeout || 10000,
+      retry: {
+        limit: maxRetries,
+        methods: ['get', 'post', 'put', 'patch', 'head', 'delete', 'options', 'trace'],
+        statusCodes: [429],
+        delay: (attemptCount) => initialRetryDelay * Math.pow(backoffFactor, attemptCount - 1),
+        jitter: (delay) => delay * (0.8 + Math.random() * 0.4),
       }
-
-      return Promise.reject(error);
     });
   }
 
   public setAccessToken(token: string) {
-    this.client.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    this.client = this.client.extend({
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   }
 
-  public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response: AxiosResponse<T> = await this.client.get(url, config);
-    return response.data;
+  public async get<T>(url: string, config?: KyOptions): Promise<T> {
+    return await this.client.get<T>(url, config).json();
   }
 
   public async post<T>(
     url: string,
-    data?: any,
-    config?: AxiosRequestConfig
+    data?: Record<string, any>,
+    config?: KyOptions
   ): Promise<T> {
-    const response: AxiosResponse<T> = await this.client.post(
-      url,
-      data,
-      config
-    );
-    return response.data;
+    return await this.client.post<T>(url, {
+      ...config,
+      json: data,
+    }).json();
   }
 
   public async patch<T>(
     url: string,
-    data?: any,
-    config?: AxiosRequestConfig
+    data?: Record<string, any>,
+    config?: KyOptions
   ): Promise<T> {
-    const response: AxiosResponse<T> = await this.client.patch(
-      url,
-      data,
-      config
-    );
-    return response.data;
+    return await this.client.patch<T>(url, {
+      ...config,
+      json: data,
+    }).json();
   }
 
-  public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response: AxiosResponse<T> = await this.client.delete(url, config);
-    return response.data;
+  public async delete<T>(
+    url: string,
+    data?: Record<string, any>,
+    config?: KyOptions
+  ): Promise<T> {
+    return await this.client.delete<T>(url, {
+      ...config,
+      json: data,
+    }).json();
   }
 }

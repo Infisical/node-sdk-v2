@@ -30,7 +30,7 @@ export class DynamicSecretsApi {
   ): Promise<DeleteDynamicSecretResponse> {
     return this.apiClient.delete<DeleteDynamicSecretResponse>(
       `/api/v1/dynamic-secrets/${encodeURIComponent(secretName)}`,
-      { data }
+      data
     );
   }
 
@@ -48,7 +48,7 @@ export class DynamicSecretsApi {
     ): Promise<DeleteLeaseResponse> => {
       return this.apiClient.delete<DeleteLeaseResponse>(
         `/api/v1/dynamic-secrets/leases/${leaseId}`,
-        { data }
+        data
       );
     },
 

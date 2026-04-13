@@ -1,4 +1,3 @@
-import axios from "axios";
 import { AWS_IDENTITY_DOCUMENT_URI, AWS_TOKEN_METADATA_URI } from "./constants";
 
 import { Sha256 } from "@aws-crypto/sha256-js";
@@ -8,6 +7,7 @@ import { SignatureV4 } from "@smithy/signature-v4";
 
 import { InfisicalSDKError } from "./errors";
 import { Secret } from "../api/types";
+import ky from "ky";
 
 export const getUniqueSecretsByKey = (secrets: Secret[]) => {
 	const secretMap = new Map<string, Secret>();
@@ -25,26 +25,22 @@ export const getAwsRegion = async () => {
 		return region;
 	}
 
-	try {
-		const tokenRes = await axios.put(AWS_TOKEN_METADATA_URI, undefined, {
-			headers: {
-				"X-aws-ec2-metadata-token-ttl-seconds": "21600"
-			},
-			timeout: 5_000 // 5 seconds
-		});
+	const tokenRes = await ky.put(AWS_TOKEN_METADATA_URI, {
+		headers: {
+			"X-aws-ec2-metadata-token-ttl-seconds": "21600"
+		},
+		timeout: 5_000
+	});
 
-		const identityResponse = await axios.get<{ region: string }>(AWS_IDENTITY_DOCUMENT_URI, {
-			headers: {
-				"X-aws-ec2-metadata-token": tokenRes.data,
-				Accept: "application/json"
-			},
-			timeout: 5_000
-		});
+	const identityResponse = await ky.get<{ region: string }>(AWS_IDENTITY_DOCUMENT_URI, {
+		headers: {
+			"X-aws-ec2-metadata-token": await tokenRes.text(),
+			Accept: "application/json"
+		},
+		timeout: 5_000
+	});
 
-		return identityResponse.data.region;
-	} catch (e) {
-		throw e;
-	}
+	return (await identityResponse.json<{ region: string }>()).region;
 };
 
 export const performAwsIamLogin = async (region: string) => {

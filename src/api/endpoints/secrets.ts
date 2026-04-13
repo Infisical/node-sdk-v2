@@ -17,7 +17,7 @@ export class SecretsApi {
 
   async listSecrets(params: ListSecretsRequest): Promise<ListSecretsResponse> {
     return this.apiClient.get<ListSecretsResponse>("/api/v3/secrets/raw", {
-      params,
+      searchParams: { ...params },
     });
   }
 
@@ -25,7 +25,7 @@ export class SecretsApi {
     const { secretName, ...queryParams } = params;
     return this.apiClient.get<GetSecretResponse>(
       `/api/v3/secrets/raw/${encodeURIComponent(secretName)}`,
-      { params }
+      { searchParams: queryParams }
     );
   }
 
@@ -55,7 +55,7 @@ export class SecretsApi {
   ): Promise<DeleteSecretResponse> {
     return this.apiClient.delete<DeleteSecretResponse>(
       `/api/v3/secrets/raw/${encodeURIComponent(secretName)}`,
-      { data }
+      data
     );
   }
 }

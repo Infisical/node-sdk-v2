@@ -1,5 +1,4 @@
 import { DynamicSecretsApi } from "../api/endpoints/dynamic-secrets";
-import { TDynamicSecretProvider } from "./schemas/dynamic-secrets";
 import { newInfisicalError } from "./errors";
 import {
   CreateDynamicSecretOptions,
