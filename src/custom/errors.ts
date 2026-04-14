@@ -38,13 +38,17 @@ export const newInfisicalError = (error: any) => {
         method: error.request.method,
         statusCode: error.response.status,
       });
-    } else if (error.message) {
-      return new InfisicalSDKError(error.message);
-    } else if (error.response.status) {
-      return new InfisicalSDKError(error.response.status.toString());
-    } else {
-      return new InfisicalSDKError("Request failed with unknown error");
     }
+
+    if (error.message) {
+      return new InfisicalSDKError(error.message);
+    }
+
+    return new InfisicalSDKError(
+      error.response.status != null
+        ? `Request failed with status ${error.response.status}`
+        : "Request failed with unknown error"
+    );
   }
 
   return new InfisicalSDKError(error?.message || "An error occurred");
