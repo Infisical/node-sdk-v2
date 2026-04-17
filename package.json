@@ -1,13 +1,27 @@
 {
   "name": "@infisical/sdk",
   "version": "0.0.0",
-  "main": "./lib/index.js",
+  "main": "./lib/cjs/index.js",
+  "module": "./lib/esm/index.mjs",
+  "types": "./lib/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./lib/esm/index.d.mts",
+        "default": "./lib/esm/index.mjs"
+      },
+      "require": {
+        "types": "./lib/cjs/index.d.ts",
+        "default": "./lib/cjs/index.js"
+      }
+    }
+  },
   "private": false,
   "files": [
     "lib"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --out-dir lib --dts --format cjs,esm --tsconfig tsconfig.json --no-splitting",
+    "build": "tsup",
     "test": "vitest run"
   },
   "keywords": [
@@ -44,7 +58,6 @@
     "lib": "lib",
     "test": "sink"
   },
-  "types": "./lib/index.d.ts",
   "bugs": {
     "url": "https://github.com/infisical/infisical-node-sdk/issues"
   },
