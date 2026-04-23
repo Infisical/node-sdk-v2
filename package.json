@@ -32,7 +32,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/infisical/infisical-node-sdk.git"
+    "url": "git+https://github.com/Infisical/node-sdk-v2.git"
   },
   "author": "Infisical Inc, <daniel@infisical.com>",
   "license": "ISC",
@@ -59,7 +59,7 @@
     "test": "sink"
   },
   "bugs": {
-    "url": "https://github.com/infisical/infisical-node-sdk/issues"
+    "url": "https://github.com/Infisical/node-sdk-v2/issues"
   },
-  "homepage": "https://github.com/infisical/infisical-node-sdk#readme"
+  "homepage": "https://github.com/Infisical/node-sdk-v2#readme"
 }
