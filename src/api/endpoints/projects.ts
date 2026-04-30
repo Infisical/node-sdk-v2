@@ -4,10 +4,15 @@ import {
   CreateProjectResponse,
   InviteMembersRequest,
   InviteMembersResponse,
+  ListProjectsResponse,
 } from "../types";
 
 export class ProjectsApi {
   constructor(private apiClient: ApiClient) {}
+
+  async listProjects(): Promise<ListProjectsResponse> {
+    return this.apiClient.get<ListProjectsResponse>("/api/v1/projects");
+  }
 
   async create(data: CreateProjectRequest): Promise<CreateProjectResponse> {
     return this.apiClient.post<CreateProjectResponse>(

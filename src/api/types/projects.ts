@@ -2,6 +2,7 @@ export interface Project {
   id: string;
   name: string;
   slug: string;
+  orgId: string;
   description?: string;
   type: string;
   createdAt: string;
@@ -40,6 +41,10 @@ export interface Membership {
 
 export interface InviteMembersResponse {
   memberships: Membership[];
+}
+
+export interface ListProjectsResponse {
+  projects: Project[];
 }
 
 export type CreateProjectOptions = {

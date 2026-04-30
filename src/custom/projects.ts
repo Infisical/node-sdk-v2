@@ -5,6 +5,15 @@ import { CreateProjectOptions, InviteMemberToProjectOptions } from "../api/types
 export default class ProjectsClient {
   constructor(private apiClient: ProjectsApi) {}
 
+  listProjects = async () => {
+    try {
+      const res = await this.apiClient.listProjects();
+      return res.projects;
+    } catch (err) {
+      throw newInfisicalError(err);
+    }
+  };
+
   create = async (options: CreateProjectOptions) => {
     try {
       const res = await this.apiClient.create(options);

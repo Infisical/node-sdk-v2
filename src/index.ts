@@ -5,6 +5,7 @@ import { DynamicSecretsApi } from "./api/endpoints/dynamic-secrets";
 import { EnvironmentsApi } from "./api/endpoints/environments";
 import { ProjectsApi } from "./api/endpoints/projects";
 import { FoldersApi } from "./api/endpoints/folders";
+import { IdentitiesApi } from "./api/endpoints/identities";
 
 import SecretsClient from "./custom/secrets";
 import AuthClient from "./custom/auth";
@@ -12,6 +13,7 @@ import DynamicSecretsClient from "./custom/dynamic-secrets";
 import EnvironmentsClient from "./custom/environments";
 import ProjectsClient from "./custom/projects";
 import FoldersClient from "./custom/folders";
+import IdentitiesClient from "./custom/identities";
 import { KmsApi } from "./api/endpoints/kms";
 import KmsClient from "./custom/kms";
 
@@ -29,6 +31,7 @@ class InfisicalSDK {
 	private environmentsApi: EnvironmentsApi;
 	private projectsApi: ProjectsApi;
 	private foldersApi: FoldersApi;
+	private identitiesApi: IdentitiesApi;
 	private kmsApi: KmsApi;
 
 	// Domain clients
@@ -38,6 +41,7 @@ class InfisicalSDK {
 	private environmentsClient: EnvironmentsClient;
 	private projectsClient: ProjectsClient;
 	private foldersClient: FoldersClient;
+	private identitiesClient: IdentitiesClient;
 	private kmsClient: KmsClient;
 
 	constructor(options?: InfisicalSDKOptions) {
@@ -53,6 +57,7 @@ class InfisicalSDK {
 		this.environmentsApi = new EnvironmentsApi(this.apiClient);
 		this.projectsApi = new ProjectsApi(this.apiClient);
 		this.foldersApi = new FoldersApi(this.apiClient);
+		this.identitiesApi = new IdentitiesApi(this.apiClient);
 		this.kmsApi = new KmsApi(this.apiClient);
 
 		// Initialize domain clients
@@ -62,6 +67,7 @@ class InfisicalSDK {
 		this.environmentsClient = new EnvironmentsClient(this.environmentsApi);
 		this.projectsClient = new ProjectsClient(this.projectsApi);
 		this.foldersClient = new FoldersClient(this.foldersApi);
+		this.identitiesClient = new IdentitiesClient(this.identitiesApi);
 		this.kmsClient = new KmsClient(this.kmsApi);
 	}
 
@@ -81,6 +87,7 @@ class InfisicalSDK {
 	projects = () => this.projectsClient;
 	folders = () => this.foldersClient;
 	dynamicSecrets = () => this.dynamicSecretsClient;
+	identities = () => this.identitiesClient;
 	auth = () => this.authClient;
 	kms = () => this.kmsClient;
 }
