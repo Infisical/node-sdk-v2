@@ -19,6 +19,10 @@ import { InfisicalSDK } from "../src";
 		clientSecret: universalAuthClientSecret
 	});
 
+	console.log("Listing existing projects");
+	const existingProjects = await client.projects().listProjects();
+	console.log(`Found ${existingProjects.length} existing projects`);
+
 	console.log("Creating project");
 	const project = await client.projects().create({
 		projectDescription: "test description",

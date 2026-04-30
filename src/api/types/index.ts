@@ -7,6 +7,7 @@ export * from "./environments";
 export * from "./projects";
 export * from "./folders";
 export * from "./kms";
+export * from "./identities";
 
 export interface ApiResponse<T> {
   statusCode: number;
