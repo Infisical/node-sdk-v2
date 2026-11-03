@@ -11,8 +11,10 @@ const DEFAULT_INITIAL_DELAY_MS = 1000;
 const DEFAULT_BACKOFF_FACTOR = 2;
 const JITTER_FRACTION = 0.2;
 
-// Raised before a connection opens, so the request never reached the server: a failed DNS lookup,
-// a refused connection, or a connection that timed out before it opened.
+// Raised before a connection opens, so the request never reached the server: a failed DNS lookup, a refused
+// connection, or undici's connect timeout. The connect timeout shows up only if it fires before the request
+// timeout. With the SDK's 10-second request timeout, a stalled connection ends in an AbortError instead, which
+// can't be retried safely, since an abort looks the same whether or not the request was sent.
 const CONNECT_ERROR_CODES = new Set([
 	"ENOTFOUND",
 	"EAI_AGAIN",

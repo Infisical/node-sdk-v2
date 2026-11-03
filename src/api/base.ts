@@ -112,7 +112,9 @@ export class ApiClient {
 	/**
 	 * Makes a POST request that must not run twice, such as one that creates something. A network error is only
 	 * retried if the connection never opened, so a lost response can't make the server handle the request again.
-	 * A rate-limited (429) response is still retried, since the server turned the request away.
+	 * A request that times out isn't retried, even if its connection stalled before opening, since fetch reports
+	 * both cases as the same AbortError. A rate-limited (429) response is still retried, since the server turned
+	 * the request away.
 	 */
 	public postOnce<T>(
 		url: string,
