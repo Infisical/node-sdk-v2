@@ -22,7 +22,12 @@ const env = (name: string) => {
 };
 
 const step = async <T>(label: string, run: () => Promise<T>, check?: (value: T) => string | undefined): Promise<T> => {
-	const value = await run();
+	let value: T;
+	try {
+		value = await run();
+	} catch (err) {
+		throw new Error(`${label}: ${(err as Error).message}`);
+	}
 	const problem = check?.(value);
 	if (problem) throw new Error(`${label}: ${problem}`);
 	console.log(`ok  ${label}`);
@@ -58,8 +63,11 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 	const adminVault = admin.agentVault();
 	const agentVault = agent.agentVault();
 
+	// What the script created and hasn't removed yet. Each one is set as soon as its request resolves, before
+	// the step checks the response, so a failed check still leaves it for cleanup.
 	let proxyId: string | undefined;
 	let bundleId: string | undefined;
+	let sessionId: string | undefined;
 	let delegationSet = false;
 
 	try {
@@ -76,54 +84,65 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 		console.log("\n== proxies ==");
 		const created = await step(
 			"proxies.create",
-			() =>
-				adminVault.proxies.create({
+			async () => {
+				const res = await adminVault.proxies.create({
 					name: `sdk-check-${suffix}`,
 					description: "Node SDK check",
 					trafficPolicy: AgentVaultTrafficPolicy.BundleHosts,
 					allowedHosts: ["api.github.com", "*.slack.com"]
-				}),
+				});
+				proxyId = res.proxy.id;
+				return res;
+			},
 			(res) => (res.proxyToken && res.proxy.allowedHosts === "api.github.com,*.slack.com" ? undefined : `got ${JSON.stringify(res.proxy)}`)
 		);
-		proxyId = created.proxy.id;
+		const proxy = created.proxy;
 		await step("proxies.list by description", () => adminVault.proxies.list({ search: "Node SDK check" }), (res) =>
-			res.proxies.some((proxy) => proxy.id === proxyId) ? undefined : "proxy not listed"
+			res.proxies.some((listed) => listed.id === proxy.id) ? undefined : "proxy not listed"
 		);
 		await step("proxies.update removes the description and allowed hosts", () =>
-			adminVault.proxies.update(proxyId!, { description: "", allowedHosts: [], pollInterval: 30 }),
-			(proxy) => (proxy.description === null && proxy.allowedHosts === null && proxy.pollInterval === 30 ? undefined : `got ${JSON.stringify(proxy)}`)
+			adminVault.proxies.update(proxy.id, { description: "", allowedHosts: [], pollInterval: 30 }),
+			(updated) => (updated.description === null && updated.allowedHosts === null && updated.pollInterval === 30 ? undefined : `got ${JSON.stringify(updated)}`)
 		);
-		await step("proxies.rotateToken", () => adminVault.proxies.rotateToken(proxyId!), (res) =>
+		await step("proxies.rotateToken", () => adminVault.proxies.rotateToken(proxy.id), (res) =>
 			res.proxyToken && res.proxyToken !== created.proxyToken ? undefined : "token didn't change"
 		);
-		await step("proxies.revoke", () => adminVault.proxies.revoke(proxyId!));
-		await step("proxies.delete", () => adminVault.proxies.delete(proxyId!), (proxy) => (proxy.id === proxyId ? undefined : "wrong proxy"));
-		proxyId = undefined;
+		await step("proxies.revoke", () => adminVault.proxies.revoke(proxy.id));
+		await step(
+			"proxies.delete",
+			async () => {
+				const deleted = await adminVault.proxies.delete(proxy.id);
+				proxyId = undefined;
+				return deleted;
+			},
+			(deleted) => (deleted.id === proxy.id ? undefined : "wrong proxy")
+		);
 
 		console.log("\n== access bundles ==");
-		const bundle = await step("accessBundles.create", () =>
-			adminVault.accessBundles.create({ name: `sdk-check-${suffix}`, description: "Node SDK check" })
-		);
-		bundleId = bundle.id;
-		await step("accessBundles.get", () => adminVault.accessBundles.get(bundleId!), (res) =>
+		const bundle = await step("accessBundles.create", async () => {
+			const res = await adminVault.accessBundles.create({ name: `sdk-check-${suffix}`, description: "Node SDK check" });
+			bundleId = res.id;
+			return res;
+		});
+		await step("accessBundles.get", () => adminVault.accessBundles.get(bundle.id), (res) =>
 			Array.isArray(res.services) ? undefined : "no services list"
 		);
-		await step("accessBundles.update removes the description", () => adminVault.accessBundles.update(bundleId!, { description: "" }), (res) =>
+		await step("accessBundles.update removes the description", () => adminVault.accessBundles.update(bundle.id, { description: "" }), (res) =>
 			res.description === null ? undefined : `description is ${JSON.stringify(res.description)}`
 		);
 		await step("accessBundles.list", () => adminVault.accessBundles.list({ search: bundle.name }), (res) =>
-			res.accessBundles.some((listed) => listed.id === bundleId) ? undefined : "bundle not listed"
+			res.accessBundles.some((listed) => listed.id === bundle.id) ? undefined : "bundle not listed"
 		);
-		await step("accessBundles.listAvailableGrantees", () => adminVault.accessBundles.listAvailableGrantees(bundleId!));
+		await step("accessBundles.listAvailableGrantees", () => adminVault.accessBundles.listAvailableGrantees(bundle.id));
 		await step("accessBundles.grant to the agent and the user", () =>
-			adminVault.accessBundles.grant(bundleId!, { machineIdentityIds: [agentId], userIds: [userId] }),
+			adminVault.accessBundles.grant(bundle.id, { machineIdentityIds: [agentId], userIds: [userId] }),
 			(res) => (res.members.length + res.skipped.length === 2 ? undefined : `got ${JSON.stringify(res)}`)
 		);
 		await step("accessBundles.grant again skips them", () =>
-			adminVault.accessBundles.grant(bundleId!, { userIds: [userId] }),
+			adminVault.accessBundles.grant(bundle.id, { userIds: [userId] }),
 			(res) => (res.skipped.some((skipped) => skipped.id === userId) ? undefined : `got ${JSON.stringify(res)}`)
 		);
-		await step("accessBundles.listGrantees", () => adminVault.accessBundles.listGrantees(bundleId!), (res) =>
+		await step("accessBundles.listGrantees", () => adminVault.accessBundles.listGrantees(bundle.id), (res) =>
 			res.members.some((member) => member.id === agentId) ? undefined : "agent isn't a grantee"
 		);
 
@@ -132,11 +151,15 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 			adminVault.delegations.listAvailableSubjects(agentId, { actorType: AgentVaultMemberType.User, search: userEmail }),
 			(res) => (res.members.some((member) => member.id === userId) ? undefined : "user isn't available")
 		);
-		await step("delegations.set", () =>
-			adminVault.delegations.set(agentId, { scope: AgentVaultDelegationScope.Selected, userIds: [userId] }),
+		await step(
+			"delegations.set",
+			async () => {
+				const delegation = await adminVault.delegations.set(agentId, { scope: AgentVaultDelegationScope.Selected, userIds: [userId] });
+				delegationSet = true;
+				return delegation;
+			},
 			(delegation) => (delegation.users.some((user) => user.id === userId) ? undefined : `got ${JSON.stringify(delegation)}`)
 		);
-		delegationSet = true;
 		await step("delegations.get", () => adminVault.delegations.get(agentId), (delegation) =>
 			Array.isArray(delegation.missingAccessBundles) ? undefined : "no missingAccessBundles"
 		);
@@ -150,14 +173,19 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 
 		console.log("\n== sessions on behalf of the user ==");
 		await step("accessBundles.list on behalf of the user", () => agentVault.accessBundles.list({ onBehalfOfUserEmail: userEmail }), (res) =>
-			res.accessBundles.some((listed) => listed.id === bundleId) ? undefined : "bundle not listed for the user"
+			res.accessBundles.some((listed) => listed.id === bundle.id) ? undefined : "bundle not listed for the user"
 		);
 		await expectRejection("sessions.create with both an email and an ID", () =>
 			agentVault.sessions.create({ accessBundle: bundle.name, onBehalfOfUserEmail: userEmail, onBehalfOfUserId: userId }),
 			/not both/
 		);
-		const session = await step("sessions.create on behalf of the user", () =>
-			agentVault.sessions.create({ accessBundle: bundle.name, onBehalfOfUserEmail: userEmail, label: "node sdk check" }),
+		const session = await step(
+			"sessions.create on behalf of the user",
+			async () => {
+				const res = await agentVault.sessions.create({ accessBundle: bundle.name, onBehalfOfUserEmail: userEmail, label: "node sdk check" });
+				sessionId = res.id;
+				return res;
+			},
 			(res) => {
 				const hours = (Date.parse(res.expiresAt ?? "") - Date.parse(res.createdAt)) / 3_600_000;
 				return res.token && Math.abs(hours - 1) < 0.05 ? undefined : `expires in ${hours} hours`;
@@ -172,32 +200,73 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 		await step("sessions.update removes the label", () => agentVault.sessions.update(session.id, { label: null }), (res) =>
 			res.label === null ? undefined : `label is ${JSON.stringify(res.label)}`
 		);
-		await step("sessions.revoke", () => agentVault.sessions.revoke(session.id), (res) =>
-			res.status === "revoked" ? undefined : `status is ${res.status}`
+		await step(
+			"sessions.revoke",
+			async () => {
+				const revoked = await agentVault.sessions.revoke(session.id);
+				sessionId = undefined;
+				return revoked;
+			},
+			(res) => (res.status === "revoked" ? undefined : `status is ${res.status}`)
 		);
 
 		console.log("\n== cleanup ==");
-		await step("delegations.removeSubjects of the last user returns null", () =>
-			adminVault.delegations.removeSubjects(agentId, { userIds: [userId] }),
+		await step(
+			"delegations.removeSubjects of the last user returns null",
+			async () => {
+				const delegation = await adminVault.delegations.removeSubjects(agentId, { userIds: [userId] });
+				if (delegation === null) delegationSet = false;
+				return delegation;
+			},
 			(delegation) => (delegation === null ? undefined : `got ${JSON.stringify(delegation)}`)
 		);
-		await step("delegations.addSubjects creates a delegation", () => adminVault.delegations.addSubjects(agentId, { userIds: [userId] }), (delegation) =>
-			delegation.scope === AgentVaultDelegationScope.Selected ? undefined : `scope is ${delegation.scope}`
+		await step(
+			"delegations.addSubjects creates a delegation",
+			async () => {
+				const delegation = await adminVault.delegations.addSubjects(agentId, { userIds: [userId] });
+				delegationSet = true;
+				return delegation;
+			},
+			(delegation) => (delegation.scope === AgentVaultDelegationScope.Selected ? undefined : `scope is ${delegation.scope}`)
 		);
-		await step("delegations.delete", () => adminVault.delegations.delete(agentId));
-		delegationSet = false;
-		await step("accessBundles.revoke", () => adminVault.accessBundles.revoke(bundleId!, { userIds: [userId], machineIdentityIds: [agentId] }), (res) =>
+		await step("delegations.delete", async () => {
+			const deleted = await adminVault.delegations.delete(agentId);
+			delegationSet = false;
+			return deleted;
+		});
+		await step("accessBundles.revoke", () => adminVault.accessBundles.revoke(bundle.id, { userIds: [userId], machineIdentityIds: [agentId] }), (res) =>
 			res.members.length === 2 ? undefined : `got ${JSON.stringify(res)}`
 		);
-		await step("accessBundles.delete", () => adminVault.accessBundles.delete(bundleId!));
-		bundleId = undefined;
+		await step("accessBundles.delete", async () => {
+			const deleted = await adminVault.accessBundles.delete(bundle.id);
+			bundleId = undefined;
+			return deleted;
+		});
 
 		console.log("\nEvery Agent Vault flow worked.");
+	} catch (err) {
+		console.error(`FAIL ${(err as Error).message}`);
+		process.exitCode = 1;
 	} finally {
-		// Leave nothing behind if a step failed.
-		if (delegationSet) await adminVault.delegations.delete(agentId).catch(() => undefined);
-		if (bundleId) await adminVault.accessBundles.delete(bundleId).catch(() => undefined);
-		if (proxyId) await adminVault.proxies.delete(proxyId).catch(() => undefined);
+		// Remove what a failed step left behind. If a removal fails too, name what's left so it can be removed by hand.
+		const leftovers: [string, () => Promise<unknown>][] = [];
+		const leftSession = sessionId;
+		const leftBundle = bundleId;
+		const leftProxy = proxyId;
+		if (leftSession) leftovers.push([`revoke session ${leftSession}`, () => agentVault.sessions.revoke(leftSession)]);
+		if (delegationSet) leftovers.push([`delete the delegation of machine identity ${agentId}`, () => adminVault.delegations.delete(agentId)]);
+		if (leftBundle) leftovers.push([`delete access bundle ${leftBundle}`, () => adminVault.accessBundles.delete(leftBundle)]);
+		if (leftProxy) leftovers.push([`delete proxy ${leftProxy}`, () => adminVault.proxies.delete(leftProxy)]);
+
+		for (const [action, run] of leftovers) {
+			try {
+				await run();
+				console.log(`ok  cleanup: ${action}`);
+			} catch (err) {
+				console.error(`FAIL cleanup: couldn't ${action}, so do it by hand: ${(err as Error).message}`);
+				process.exitCode = 1;
+			}
+		}
 	}
 })().catch((err) => {
 	console.error(`FAIL ${err.message}`);
