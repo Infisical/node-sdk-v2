@@ -1,5 +1,5 @@
 import { FetchHttpError } from "./fetch-errors";
-import { fetchWithRetry } from "./retry";
+import { FetchRetryOptions, fetchWithRetry, isConnectError } from "./retry";
 
 export type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE" | "PUT" | "OPTIONS" | "HEAD";
 
@@ -109,6 +109,26 @@ export class ApiClient {
 		});
 	}
 
+	/**
+	 * Makes a POST request that must not run twice, such as one that creates something. A network error is only
+	 * retried if the connection never opened, so a lost response can't make the server handle the request again.
+	 * A rate-limited (429) response is still retried, since the server turned the request away.
+	 */
+	public postOnce<T>(
+		url: string,
+		data?: unknown,
+		config?: RequestConfig
+	): Promise<T> {
+		const { body, headers } = this.serializeBody(data, config);
+		return this.request<T>(
+			"POST",
+			url,
+			body,
+			{ ...config, headers },
+			{ shouldRetryError: isConnectError }
+		);
+	}
+
 	public put<T>(
 		url: string,
 		data?: unknown,
@@ -181,7 +201,8 @@ export class ApiClient {
 		method: HttpMethod,
 		url: string,
 		body: string | undefined,
-		config?: RequestConfig
+		config?: RequestConfig,
+		retryOptions?: FetchRetryOptions
 	): Promise<T> {
 		const fullUrl = buildUrl(this.baseURL, url, config?.params);
 
@@ -207,7 +228,7 @@ export class ApiClient {
 			}
 		};
 
-		const response = await fetchWithRetry(doFetch);
+		const response = await fetchWithRetry(doFetch, retryOptions);
 
 		if (!response.ok) {
 			throw new FetchHttpError(

@@ -2,12 +2,31 @@ export interface FetchRetryOptions {
 	maxRetries?: number;
 	initialDelayMs?: number;
 	backoffFactor?: number;
+	/** Whether to retry an error thrown by fetch, such as a network error. Defaults to retrying every one. */
+	shouldRetryError?: (err: unknown) => boolean;
 }
 
 const DEFAULT_MAX_RETRIES = 4;
 const DEFAULT_INITIAL_DELAY_MS = 1000;
 const DEFAULT_BACKOFF_FACTOR = 2;
 const JITTER_FRACTION = 0.2;
+
+// Raised before a connection opens, so the request never reached the server: a failed DNS lookup,
+// a refused connection, or a connection that timed out before it opened.
+const CONNECT_ERROR_CODES = new Set([
+	"ENOTFOUND",
+	"EAI_AGAIN",
+	"ECONNREFUSED",
+	"UND_ERR_CONNECT_TIMEOUT",
+]);
+
+/** Whether a fetch error was raised before the request could reach the server, so retrying it can't make the server handle it twice. */
+export const isConnectError = (err: unknown): boolean => {
+	// Node's fetch throws a TypeError with the network error as its cause. Other fetch implementations throw the network error itself.
+	const networkError = (err as { cause?: unknown } | null | undefined)?.cause ?? err;
+	const code = (networkError as { code?: unknown } | null | undefined)?.code;
+	return typeof code === "string" && CONNECT_ERROR_CODES.has(code);
+};
 
 const sleep = (ms: number) =>
 	new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -25,6 +44,7 @@ export const fetchWithRetry = async (
 
 	const initialDelayMs = opts.initialDelayMs ?? DEFAULT_INITIAL_DELAY_MS;
 	const backoffFactor = opts.backoffFactor ?? DEFAULT_BACKOFF_FACTOR;
+	const shouldRetryError = opts.shouldRetryError ?? (() => true);
 
 	const delayFor = (attempt: number): number => {
 		const base = initialDelayMs * Math.pow(backoffFactor, attempt - 1);
@@ -47,7 +67,7 @@ export const fetchWithRetry = async (
 			return response;
 		} catch (err) {
 			attempt++;
-			if (attempt > maxRetries) throw err;
+			if (attempt > maxRetries || !shouldRetryError(err)) throw err;
 			await sleep(delayFor(attempt));
 		}
 	}
