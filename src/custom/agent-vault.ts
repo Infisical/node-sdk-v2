@@ -215,7 +215,7 @@ export default class AgentVaultClient {
 
 				const res = await this.apiClient.sessions.create({
 					// Left out without an access bundle, for a session that carries only services of its own.
-					accessBundles: isSet(options.accessBundle) ? [options.accessBundle] : undefined,
+					accessBundle: isSet(options.accessBundle) ? options.accessBundle : undefined,
 					services: options.services,
 					// Left out unless you pass it, so the server picks the default: 7d, or 1h on behalf of a user.
 					ttl: options.ttl,
@@ -238,7 +238,7 @@ export default class AgentVaultClient {
 
 		/**
 		 * Revokes an Agent Vault session. Revoking an already revoked session changes nothing.
-		 * @returns The revoked session. The response leaves out its access bundles and inline services; call get for them.
+		 * @returns The revoked session. The response leaves out its access bundle and inline services; call get for them.
 		 */
 		revoke: (sessionId: string) =>
 			run(async () => {

@@ -115,12 +115,11 @@ export interface AgentVaultSessionMachineIdentity {
 /** The user or machine identity an Agent Vault session belongs to. */
 export type AgentVaultSessionActor = AgentVaultSessionUser | AgentVaultSessionMachineIdentity;
 
-/** An access bundle carried by an Agent Vault session. */
+/** The access bundle an Agent Vault session carries. */
 export interface AgentVaultSessionAccessBundle {
 	/** The ID of the access bundle, or null once it's deleted. */
 	id: string | null;
 	name: string;
-	position: number;
 }
 
 // Inline services: services sent with a session, instead of added to an access bundle. Their values are sent exactly
@@ -237,7 +236,8 @@ export interface AgentVaultSession {
 	expiresAt: string | null;
 	revokedAt: string | null;
 	createdAt: string;
-	accessBundles: AgentVaultSessionAccessBundle[];
+	/** The access bundle the session carries, or null if it carries only inline services. */
+	accessBundle: AgentVaultSessionAccessBundle | null;
 	/** The services sent with the session when it was created, without their secrets. Empty if it carries only an access bundle. */
 	services: AgentVaultInlineService[];
 }
@@ -251,7 +251,8 @@ export interface CreatedAgentVaultSession {
 	/** When the session expires, or null when it never does. */
 	expiresAt: string | null;
 	createdAt: string;
-	accessBundles: AgentVaultSessionAccessBundle[];
+	/** The access bundle the session carries, or null if it carries only inline services. */
+	accessBundle: AgentVaultSessionAccessBundle | null;
 	/** The services sent with the session, without their secrets. Empty if it carries only an access bundle. */
 	services: AgentVaultInlineService[];
 }
@@ -270,8 +271,8 @@ export interface CreateAgentVaultSessionResponse {
 }
 
 export interface RevokeAgentVaultSessionResponse {
-	/** The revoked session. The response leaves out its access bundles and inline services. */
-	session: Omit<AgentVaultSession, "accessBundles" | "services">;
+	/** The revoked session. The response leaves out its access bundle and inline services. */
+	session: Omit<AgentVaultSession, "accessBundle" | "services">;
 }
 
 // Access bundles
@@ -548,7 +549,7 @@ export interface ListAgentVaultSessionsRequest {
 }
 
 export interface CreateAgentVaultSessionRequest {
-	accessBundles?: string[];
+	accessBundle?: string;
 	services?: AgentVaultInlineServiceInput[];
 	ttl?: string;
 	label?: string;

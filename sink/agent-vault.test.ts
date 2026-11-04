@@ -35,7 +35,7 @@ const PROXY = {
 	createdAt: CREATED_AT
 };
 const USER = { id: USER_ID, username: USER_EMAIL, email: USER_EMAIL, firstName: "Jane", lastName: "Smith" };
-const SESSION_ACCESS_BUNDLES = [{ id: BUNDLE_ID, name: "release", position: 0 }];
+const SESSION_ACCESS_BUNDLE = { id: BUNDLE_ID, name: "release" };
 const SESSION = {
 	id: SESSION_ID,
 	label: null,
@@ -45,7 +45,7 @@ const SESSION = {
 	expiresAt: "2026-10-27T01:00:00.000Z",
 	revokedAt: null,
 	createdAt: CREATED_AT,
-	accessBundles: SESSION_ACCESS_BUNDLES,
+	accessBundle: SESSION_ACCESS_BUNDLE,
 	services: []
 };
 const CREATED_SESSION = {
@@ -54,7 +54,7 @@ const CREATED_SESSION = {
 	token: "session-token",
 	expiresAt: SESSION.expiresAt,
 	createdAt: CREATED_AT,
-	accessBundles: SESSION_ACCESS_BUNDLES,
+	accessBundle: SESSION_ACCESS_BUNDLE,
 	services: []
 };
 // A service sent with a session, as the SDK takes it and as the API returns it (without its secrets).
@@ -228,7 +228,7 @@ const ROUTES: {
 		call: (av) => av.sessions.create({ accessBundle: "release" }),
 		method: "POST",
 		path: "/sessions",
-		body: { accessBundles: ["release"] },
+		body: { accessBundle: "release" },
 		response: { session: CREATED_SESSION },
 		returns: (res) => res.session
 	},
@@ -246,7 +246,7 @@ const ROUTES: {
 		call: (av) => av.sessions.revoke(SESSION_ID),
 		method: "POST",
 		path: `/sessions/${SESSION_ID}/revoke`,
-		response: { session: { ...SESSION, accessBundles: undefined, services: undefined, status: "revoked", revokedAt: CREATED_AT } },
+		response: { session: { ...SESSION, accessBundle: undefined, services: undefined, status: "revoked", revokedAt: CREATED_AT } },
 		returns: (res) => res.session
 	},
 	{
@@ -515,22 +515,23 @@ describe("agent vault traffic policy", () => {
 
 describe("agent vault inline services", () => {
 	it("create sends services without an access bundle", async () => {
-		respondWith({ session: { ...CREATED_SESSION, accessBundles: [], services: [INLINE_SERVICE] } });
+		respondWith({ session: { ...CREATED_SESSION, accessBundle: null, services: [INLINE_SERVICE] } });
 		const created = await agentVault.sessions.create({ services: [INLINE_SERVICE_INPUT], ttl: "15m" });
 		expect(lastRequest().body).toEqual({ services: [INLINE_SERVICE_INPUT], ttl: "15m" });
 		expect(created.services).toEqual([INLINE_SERVICE]);
+		expect(created.accessBundle).toBeNull();
 	});
 
 	it("create sends an access bundle and services together", async () => {
 		respondWith({ session: { ...CREATED_SESSION, services: [INLINE_SERVICE] } });
 		await agentVault.sessions.create({ accessBundle: "release", services: [INLINE_SERVICE_INPUT] });
-		expect(lastRequest().body).toEqual({ accessBundles: ["release"], services: [INLINE_SERVICE_INPUT] });
+		expect(lastRequest().body).toEqual({ accessBundle: "release", services: [INLINE_SERVICE_INPUT] });
 	});
 
 	it("create sends an empty access bundle name, so the server rejects it instead of dropping it", async () => {
 		respondWith({ session: CREATED_SESSION });
 		await agentVault.sessions.create({ accessBundle: "" });
-		expect(lastRequest().body).toEqual({ accessBundles: [""] });
+		expect(lastRequest().body).toEqual({ accessBundle: "" });
 	});
 
 	it("returns a session's services as the API sends them", async () => {
@@ -592,6 +593,21 @@ describe("agent vault inline services", () => {
 });
 
 describe("agent vault sessions", () => {
+	it("get reads the one access bundle a session carries, which keeps its name once deleted", async () => {
+		respondWith({ session: SESSION });
+		expect((await agentVault.sessions.get(SESSION_ID)).accessBundle).toEqual({ id: BUNDLE_ID, name: "release" });
+
+		respondWith({ session: { ...SESSION, accessBundle: { id: null, name: "release" } } });
+		expect((await agentVault.sessions.get(SESSION_ID)).accessBundle).toEqual({ id: null, name: "release" });
+	});
+
+	it("create sends one access bundle and reads it back", async () => {
+		respondWith({ session: CREATED_SESSION });
+		const created = await agentVault.sessions.create({ accessBundle: "release", ttl: "1h" });
+		expect(lastRequest().body).toEqual({ accessBundle: "release", ttl: "1h" });
+		expect(created.accessBundle).toEqual({ id: BUNDLE_ID, name: "release" });
+	});
+
 	it.each(["nightly deploy", null])("update always sends the label (%j)", async (label) => {
 		respondWith({ session: { ...SESSION, label } });
 		const updated = await agentVault.sessions.update(SESSION_ID, { label });
@@ -602,7 +618,7 @@ describe("agent vault sessions", () => {
 	it("create leaves out ttl so the server picks the default", async () => {
 		respondWith({ session: CREATED_SESSION });
 		await agentVault.sessions.create({ accessBundle: "release" });
-		expect(lastRequest().body).toEqual({ accessBundles: ["release"] });
+		expect(lastRequest().body).toEqual({ accessBundle: "release" });
 	});
 
 	it.each([
@@ -612,7 +628,7 @@ describe("agent vault sessions", () => {
 	])("create names the user it acts for by $name", async ({ options, onBehalfOf }) => {
 		respondWith({ session: CREATED_SESSION });
 		await agentVault.sessions.create({ accessBundle: "release", ...options });
-		expect(lastRequest().body).toEqual({ accessBundles: ["release"], onBehalfOf });
+		expect(lastRequest().body).toEqual({ accessBundle: "release", onBehalfOf });
 	});
 
 	it("create rejects both a user email and a user ID before sending a request", async () => {

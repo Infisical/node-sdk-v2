@@ -240,7 +240,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 				const returned = JSON.stringify(res.services);
 				if (returned.includes(token) || returned.includes(headerValue)) return "the response includes a secret";
 				const [service] = res.services;
-				return res.accessBundles.length === 0 && res.services.length === 1 && service.name === "httpbin" && service.credential.type === "bearer"
+				return res.accessBundle === null && res.services.length === 1 && service.name === "httpbin" && service.credential.type === "bearer"
 					? undefined
 					: `got ${JSON.stringify(res)}`;
 			}
@@ -261,7 +261,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 				openSessionIds.add(res.id);
 				return res;
 			},
-			(res) => (res.accessBundles.length === 1 && res.services.length === 1 ? undefined : `got ${JSON.stringify(res)}`)
+			(res) => (res.accessBundle?.name === bundle.name && res.services.length === 1 ? undefined : `got ${JSON.stringify(res)}`)
 		);
 		// The agent is a member, not an admin. If the server lets it through anyway, the session is still revoked below.
 		await step(
