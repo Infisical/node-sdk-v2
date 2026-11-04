@@ -1,7 +1,11 @@
 import { isFetchHttpError } from "../api/fetch-errors";
 
+// Written out rather than ErrorOptions, which exists only in TypeScript's ES2022 library, so a project that compiles
+// the SDK's types against an older library doesn't fail.
+type InfisicalErrorOptions = { cause?: unknown };
+
 export class InfisicalSDKError extends Error {
-  constructor(message: string, options?: ErrorOptions) {
+  constructor(message: string, options?: InfisicalErrorOptions) {
     super(message, options);
     this.message = message;
     this.name = "InfisicalSDKError";
@@ -19,7 +23,7 @@ export class InfisicalSDKRequestError extends Error {
       method: string;
       statusCode: number;
     },
-    options?: ErrorOptions
+    options?: InfisicalErrorOptions
   ) {
     super(message, options);
     this.message = `[URL=${requestData.url}] [Method=${requestData.method}] [StatusCode=${requestData.statusCode}] ${message}`;
