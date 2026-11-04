@@ -678,7 +678,8 @@ export type CreateAgentVaultSessionOptions = {
 	/**
 	 * Services the session carries itself, instead of or beside its access bundle's: up to 20. Only Agent Vault admins
 	 * can send them. Each has the same fields as a service in an access bundle, except that its name is optional, its
-	 * values can't use variables, and it can't use OAuth or member-provided values.
+	 * values can't use variables, it can't use OAuth or member-provided values, and an MCP server can't be limited to
+	 * some of its tools. To limit an MCP server's tools, add it to an access bundle instead.
 	 */
 	services?: AgentVaultInlineServiceInput[];
 	/** How long the session lasts: a duration such as "30m", "8h" or "7d" (at least 1m), or "never". Defaults to "7d", or to "1h" for a session on behalf of a user. */
