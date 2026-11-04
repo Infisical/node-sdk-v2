@@ -1,5 +1,7 @@
+import { inspect } from "node:util";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { InfisicalSDK, InfisicalSDKError, InfisicalSDKRequestError } from "../src";
+import { FetchHttpError } from "../src/api/fetch-errors";
 import {
 	AgentVaultDelegationScope,
 	AgentVaultMemberType,
@@ -820,6 +822,20 @@ describe("agent vault errors", () => {
 		expect(thrown).toBeInstanceOf(InfisicalSDKError);
 		expect(thrown.message).toBe("fetch failed");
 		expect(thrown.cause).toBe(reset);
+	});
+
+	it("keeps a large response body out of the printed error, but readable in cause.response.data", async () => {
+		const page = `<html><body>${"<p>Bad gateway</p>".repeat(8500)}</body></html>`;
+		fetchSpy.mockImplementation(async () => new Response(page, { status: 502, headers: { "Content-Type": "text/html" } }));
+
+		const error = (await agentVault.sessions.get(SESSION_ID).catch((err: unknown) => err)) as InfisicalSDKError;
+
+		expect(error).toBeInstanceOf(InfisicalSDKError);
+		expect(error.message).toBe("Request failed with status 502");
+		expect(inspect(error)).not.toContain("Bad gateway");
+		expect(Object.keys(error.cause as object)).not.toContain("response");
+		expect((error.cause as FetchHttpError).response.data).toBe(page);
+		expect((error.cause as FetchHttpError).response.status).toBe(502);
 	});
 
 	it("throws an error the SDK raised itself as it is, without wrapping it", async () => {
