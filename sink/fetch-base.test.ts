@@ -242,3 +242,125 @@ describe("serializeBody", () => {
 		expect(fetchSpy).not.toHaveBeenCalled();
 	});
 });
+
+describe("postOnce", () => {
+	const baseURL = "https://example.com/api/v1/";
+
+	let fetchSpy: ReturnType<typeof vi.fn>;
+	let client: ApiClient;
+
+	// Node's fetch throws a TypeError with the network error as its cause.
+	const networkError = (code: string) =>
+		new TypeError("fetch failed", { cause: Object.assign(new Error(code), { code }) });
+	const okResponse = () => new Response('{"ok":true}', { status: 200 });
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		fetchSpy = vi.fn();
+		vi.stubGlobal("fetch", fetchSpy);
+		client = new ApiClient({ baseURL });
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.unstubAllGlobals();
+	});
+
+	it.each(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "EHOSTUNREACH", "ENETUNREACH", "UND_ERR_CONNECT_TIMEOUT"])(
+		"retries when the connection never opened (%s)",
+		async (code) => {
+			fetchSpy.mockRejectedValueOnce(networkError(code)).mockResolvedValueOnce(okResponse());
+
+			const promise = client.postOnce("/x", { a: 1 });
+			await vi.runAllTimersAsync();
+
+			expect(await promise).toEqual({ ok: true });
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+		}
+	);
+
+	it.each([
+		["a timeout", new DOMException("The request timed out after 10 seconds", "TimeoutError")],
+		["a reset connection", networkError("ECONNRESET")],
+		["a socket closed after the request was sent", networkError("UND_ERR_SOCKET")],
+	])("doesn't retry %s, since the request may have reached the server", async (_, error) => {
+		fetchSpy.mockRejectedValue(error);
+
+		const assertion = expect(client.postOnce("/x", { a: 1 })).rejects.toBe(error);
+		await vi.runAllTimersAsync();
+		await assertion;
+
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+	});
+
+	it("retries a rate-limited response, since the server turned the request away", async () => {
+		fetchSpy
+			.mockResolvedValueOnce(new Response("rate limited", { status: 429 }))
+			.mockResolvedValueOnce(okResponse());
+
+		const promise = client.postOnce("/x", { a: 1 });
+		await vi.runAllTimersAsync();
+
+		expect(await promise).toEqual({ ok: true });
+		expect(fetchSpy).toHaveBeenCalledTimes(2);
+	});
+
+	it("sends the body and method like post", async () => {
+		fetchSpy.mockResolvedValueOnce(okResponse());
+
+		await client.postOnce("/x", { a: 1 });
+
+		const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+		expect(url).toBe("https://example.com/api/v1/x");
+		expect(init).toMatchObject({ method: "POST", body: '{"a":1}' });
+	});
+
+	it("rejects with a TimeoutError that says how long it waited", async () => {
+		// fetch rejects with the abort reason, as Node's fetch does.
+		fetchSpy.mockImplementation(
+			(_url: string, init: RequestInit) =>
+				new Promise((_resolve, reject) => init.signal!.addEventListener("abort", () => reject(init.signal!.reason)))
+		);
+		const client = new ApiClient({ baseURL, timeout: 2_500 });
+
+		const assertion = expect(client.postOnce("/x", { a: 1 })).rejects.toMatchObject({
+			name: "TimeoutError",
+			message: "The request timed out after 2.5 seconds"
+		});
+		await vi.advanceTimersByTimeAsync(2_500);
+		await assertion;
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+	});
+
+	it("deleteOnce sends a JSON body, and retries when the connection never opened", async () => {
+		fetchSpy.mockRejectedValueOnce(networkError("ECONNREFUSED")).mockResolvedValueOnce(okResponse());
+
+		const promise = client.deleteOnce("/x", { data: { a: 1 } });
+		await vi.runAllTimersAsync();
+
+		expect(await promise).toEqual({ ok: true });
+		expect(fetchSpy).toHaveBeenCalledTimes(2);
+		expect(fetchSpy.mock.calls[1][1]).toMatchObject({ method: "DELETE", body: '{"a":1}' });
+	});
+
+	it("deleteOnce doesn't retry a timeout, since the request may have reached the server", async () => {
+		const timeout = new DOMException("The request timed out after 10 seconds", "TimeoutError");
+		fetchSpy.mockRejectedValue(timeout);
+
+		const assertion = expect(client.deleteOnce("/x", { data: { a: 1 } })).rejects.toBe(timeout);
+		await vi.runAllTimersAsync();
+		await assertion;
+
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+	});
+
+	it("post still retries a network error that postOnce doesn't", async () => {
+		fetchSpy.mockRejectedValueOnce(networkError("ECONNRESET")).mockResolvedValueOnce(okResponse());
+
+		const promise = client.post("/x", { a: 1 });
+		await vi.runAllTimersAsync();
+
+		expect(await promise).toEqual({ ok: true });
+		expect(fetchSpy).toHaveBeenCalledTimes(2);
+	});
+});

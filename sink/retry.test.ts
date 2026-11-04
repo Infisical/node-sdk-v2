@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { fetchWithRetry } from "../src/api/retry";
+import { fetchWithRetry, isConnectError } from "../src/api/retry";
 
 const okResponse = () => new Response("ok", { status: 200 });
 const rateLimitResponse = () => new Response("rate limited", { status: 429 });
@@ -188,5 +188,52 @@ describe("fetchWithRetry", () => {
 		expect(delayCalls[2]).toBeLessThanOrEqual(4800);
 
 		setTimeoutSpy.mockRestore();
+	});
+
+	it("throws a network error that shouldRetryError rejects without retrying", async () => {
+		const error = new TypeError("fetch failed");
+		const fn = vi.fn().mockRejectedValue(error);
+		const shouldRetryError = vi.fn().mockReturnValue(false);
+
+		await expect(
+			fetchWithRetry(fn, { maxRetries: 3, shouldRetryError })
+		).rejects.toBe(error);
+		expect(fn).toHaveBeenCalledTimes(1);
+		expect(shouldRetryError).toHaveBeenCalledWith(error);
+	});
+});
+
+describe("isConnectError", () => {
+	const withCode = (code: string) => Object.assign(new Error(code), { code });
+	const fetchFailed = (cause: unknown) => new TypeError("fetch failed", { cause });
+
+	it.each(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "EHOSTUNREACH", "ENETUNREACH", "UND_ERR_CONNECT_TIMEOUT"])(
+		"is true for %s, the way Node's fetch reports it",
+		(code) => {
+			expect(isConnectError(fetchFailed(withCode(code)))).toBe(true);
+		}
+	);
+
+	it("is true when every address of a host refuses the connection", () => {
+		// Node tries each address of a host like localhost, and reports one AggregateError with the first error's code.
+		const refused = Object.assign(
+			new AggregateError([withCode("ECONNREFUSED"), withCode("ECONNREFUSED")]),
+			{ code: "ECONNREFUSED" }
+		);
+		expect(isConnectError(fetchFailed(refused))).toBe(true);
+	});
+
+	it("is true for a fetch implementation that throws the network error itself", () => {
+		expect(isConnectError(withCode("ECONNREFUSED"))).toBe(true);
+	});
+
+	it.each([
+		["a timeout", new DOMException("The request timed out after 10 seconds", "TimeoutError")],
+		["a reset connection", fetchFailed(withCode("ECONNRESET"))],
+		["a socket closed after the request was sent", fetchFailed(withCode("UND_ERR_SOCKET"))],
+		["an error without a code", new TypeError("fetch failed")],
+		["a value that isn't an error", undefined],
+	])("is false for %s", (_, error) => {
+		expect(isConnectError(error)).toBe(false);
 	});
 });
