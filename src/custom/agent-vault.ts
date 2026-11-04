@@ -421,8 +421,9 @@ export default class AgentVaultClient {
 			}),
 
 		/**
-		 * Stops a machine identity from creating Agent Vault sessions on behalf of users. The sessions it already created
-		 * on their behalf stop working.
+		 * Stops a machine identity from creating Agent Vault sessions on behalf of users. The proxy refuses the sessions it
+		 * already created on their behalf until a delegation covers those users again, so revoke the sessions to end them
+		 * for good.
 		 * @returns The deleted delegation, without missingAccessBundles.
 		 */
 		delete: (machineIdentityId: string) =>
@@ -447,8 +448,9 @@ export default class AgentVaultClient {
 			}),
 
 		/**
-		 * Takes users and groups out of a machine identity's delegation. The sessions it created on behalf of the users
-		 * you take out stop working, and taking out the last user or group removes the delegation.
+		 * Takes users and groups out of a machine identity's delegation. The proxy refuses the sessions it created on
+		 * behalf of the users you take out until the delegation covers them again, so revoke the sessions to end them for
+		 * good. Taking out the last user or group removes the delegation.
 		 * @returns The delegation after the change, with missingAccessBundles, or null if it no longer names anyone.
 		 */
 		removeSubjects: (machineIdentityId: string, options: RemoveAgentVaultDelegationSubjectsOptions) =>
