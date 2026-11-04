@@ -112,9 +112,9 @@ export class ApiClient {
 	/**
 	 * Makes a POST request that must not run twice, such as one that creates something. A network error is only
 	 * retried if the connection never opened, so a lost response can't make the server handle the request again.
-	 * A request that times out isn't retried, even if its connection stalled before opening, since fetch reports
-	 * both cases as the same AbortError. A rate-limited (429) response is still retried, since the server turned
-	 * the request away.
+	 * A request that times out isn't retried, even if its connection stalled before opening, since both cases end
+	 * in the same TimeoutError. A rate-limited (429) response is still retried, since the server turned the request
+	 * away.
 	 */
 	public postOnce<T>(
 		url: string,
@@ -161,6 +161,18 @@ export class ApiClient {
 			...config,
 			headers,
 		});
+	}
+
+	/** Makes a DELETE request that must not run twice. It's retried in the same cases as postOnce. */
+	public deleteOnce<T>(url: string, config?: RequestConfig): Promise<T> {
+		const { body, headers } = this.serializeBody(config?.data, config);
+		return this.request<T>(
+			"DELETE",
+			url,
+			body,
+			{ ...config, headers },
+			{ shouldRetryError: isConnectError }
+		);
 	}
 
 	private serializeBody(
@@ -217,7 +229,14 @@ export class ApiClient {
 
 		const doFetch = async (): Promise<Response> => {
 			const controller = new AbortController();
-			const timer = setTimeout(() => controller.abort(), timeoutMs);
+			// fetch rejects with the abort reason, so the error says the request timed out, and after how long.
+			const timer = setTimeout(
+				() =>
+					controller.abort(
+						new DOMException(`The request timed out after ${timeoutMs / 1000} seconds`, "TimeoutError")
+					),
+				timeoutMs
+			);
 			try {
 				return await fetch(fullUrl, {
 					method,

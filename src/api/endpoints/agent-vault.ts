@@ -1,3 +1,4 @@
+import { InfisicalSDKError } from "../../custom/errors";
 import { ApiClient } from "../base";
 import {
 	AgentVaultProxyWithTokenResponse,
@@ -38,10 +39,22 @@ import {
 
 const BASE_PATH = "/api/v1/agent-vault";
 
-const segment = (id: string) => encodeURIComponent(id);
+/**
+ * Encodes an ID as one path segment. fetch resolves "." and ".." like directories, so `accessBundles.revoke("..")`
+ * would reach the route that removes members from Agent Vault, which takes the same body. An empty ID would reach a
+ * route that isn't the one meant either, so all three are refused before any request.
+ */
+const segment = (id: string) => {
+	if (!id || id === "." || id === "..") {
+		throw new InfisicalSDKError(`Invalid ID ${JSON.stringify(id)}: an ID can't be empty, "." or ".."`);
+	}
+	return encodeURIComponent(id);
+};
 
 // Creates and token rotations use postOnce, so a network error after the request may have reached the server
-// isn't retried: a retry could create a second proxy, session or access bundle, or rotate a token twice.
+// isn't retried: a retry could create a second proxy, session or access bundle, or rotate a token twice. Grants
+// and revokes use postOnce and deleteOnce too: they report which grantees changed, so after a lost response, a
+// retry would report each one as skipped.
 export class AgentVaultApi {
 	constructor(private apiClient: ApiClient) {}
 
@@ -120,13 +133,13 @@ export class AgentVaultApi {
 			),
 
 		grant: (accessBundleId: string, data: ChangeAgentVaultAccessBundleGrantsRequest) =>
-			this.apiClient.post<GrantAgentVaultAccessBundleResponse>(
+			this.apiClient.postOnce<GrantAgentVaultAccessBundleResponse>(
 				`${BASE_PATH}/access-bundles/${segment(accessBundleId)}/members`,
 				data
 			),
 
 		revoke: (accessBundleId: string, data: ChangeAgentVaultAccessBundleGrantsRequest) =>
-			this.apiClient.delete<RevokeAgentVaultAccessBundleResponse>(
+			this.apiClient.deleteOnce<RevokeAgentVaultAccessBundleResponse>(
 				`${BASE_PATH}/access-bundles/${segment(accessBundleId)}/members`,
 				{ data }
 			)

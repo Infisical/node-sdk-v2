@@ -14,7 +14,7 @@
 // revokes the sessions it starts.
 //
 // Run it with a TypeScript runner, such as: npx tsx sink/test-agent-vault.ts
-import { InfisicalSDK } from "../src";
+import { InfisicalSDK, InfisicalSDKRequestError } from "../src";
 import { AgentVaultDelegationScope, AgentVaultMemberType, AgentVaultTrafficPolicy } from "../src/api/types/agent-vault";
 
 const env = (name: string) => {
@@ -75,7 +75,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 	try {
 		// delegations.set replaces a delegation, so the script must not run against one someone set up.
 		const existing = await adminVault.delegations.get(agentId).catch((err: Error) => {
-			if (/StatusCode=404/.test(err.message)) return null;
+			if (err instanceof InfisicalSDKRequestError && err.statusCode === 404) return null;
 			throw err;
 		});
 		if (existing) {

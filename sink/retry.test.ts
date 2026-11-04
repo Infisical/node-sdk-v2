@@ -207,7 +207,7 @@ describe("isConnectError", () => {
 	const withCode = (code: string) => Object.assign(new Error(code), { code });
 	const fetchFailed = (cause: unknown) => new TypeError("fetch failed", { cause });
 
-	it.each(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "UND_ERR_CONNECT_TIMEOUT"])(
+	it.each(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "EHOSTUNREACH", "ENETUNREACH", "UND_ERR_CONNECT_TIMEOUT"])(
 		"is true for %s, the way Node's fetch reports it",
 		(code) => {
 			expect(isConnectError(fetchFailed(withCode(code)))).toBe(true);
@@ -228,7 +228,7 @@ describe("isConnectError", () => {
 	});
 
 	it.each([
-		["a timeout", new DOMException("This operation was aborted", "AbortError")],
+		["a timeout", new DOMException("The request timed out after 10 seconds", "TimeoutError")],
 		["a reset connection", fetchFailed(withCode("ECONNRESET"))],
 		["a socket closed after the request was sent", fetchFailed(withCode("UND_ERR_SOCKET"))],
 		["an error without a code", new TypeError("fetch failed")],

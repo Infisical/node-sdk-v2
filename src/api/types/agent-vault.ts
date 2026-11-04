@@ -388,7 +388,7 @@ export interface AgentVaultGroup {
 export type AgentVaultGrantee = (
 	| (AgentVaultUser & {
 			/** Whether the user still has an unaccepted invitation to the organization. */
-			isOrgMembershipPending?: boolean;
+			isOrgMembershipPending: boolean;
 	  })
 	| AgentVaultMachineIdentity
 	| AgentVaultGroup
@@ -582,6 +582,7 @@ export interface UpdateAgentVaultAccessBundleRequest {
 }
 
 export interface ListAgentVaultAccessBundleMembersRequest {
+	actorType?: AgentVaultMemberType | `${AgentVaultMemberType}`;
 	search?: string;
 	limit: number;
 	offset: number;
@@ -733,6 +734,8 @@ export type UpdateAgentVaultAccessBundleOptions = {
 };
 
 export type ListAgentVaultGranteesOptions = {
+	/** List only users, only machine identities, or only groups. Defaults to all three. */
+	actorType?: AgentVaultMemberType | `${AgentVaultMemberType}`;
 	/** Match by name, username or email address. */
 	search?: string;
 	/** The maximum number to return (1-100). Defaults to 20. */

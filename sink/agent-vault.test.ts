@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { InfisicalSDK } from "../src";
+import { InfisicalSDK, InfisicalSDKError, InfisicalSDKRequestError } from "../src";
 import {
 	AgentVaultDelegationScope,
 	AgentVaultMemberType,
@@ -7,7 +7,6 @@ import {
 	AgentVaultSessionStatus,
 	AgentVaultTrafficPolicy
 } from "../src/api/types/agent-vault";
-import { InfisicalSDKError } from "../src/custom/errors";
 
 type AgentVault = ReturnType<InfisicalSDK["agentVault"]>;
 
@@ -664,6 +663,14 @@ describe("agent vault access bundles", () => {
 		expect(lastRequest().body).toEqual({ description: "" });
 	});
 
+	it("listGrantees and listAvailableGrantees send the actor type value", async () => {
+		respondWith({ members: [], totalCount: 0 });
+		await agentVault.accessBundles.listGrantees(BUNDLE_ID, { actorType: AgentVaultMemberType.Group });
+		expect(lastRequest().query.actorType).toBe("group");
+		await agentVault.accessBundles.listAvailableGrantees(BUNDLE_ID, { actorType: "machineIdentity" });
+		expect(lastRequest().query.actorType).toBe("machineIdentity");
+	});
+
 	it("grant and revoke send only the grantees you name", async () => {
 		respondWith({ members: [{ type: "machineIdentity", id: MACHINE_IDENTITY_ID, grantedAt: CREATED_AT }], skipped: [] });
 		await agentVault.accessBundles.grant(BUNDLE_ID, { machineIdentityIds: [MACHINE_IDENTITY_ID] });
@@ -708,20 +715,23 @@ describe("agent vault delegations", () => {
 
 describe("agent vault retries", () => {
 	// What the SDK's request timeout throws. The server may have handled the request before it fired.
-	const timeoutError = () => new DOMException("This operation was aborted", "AbortError");
+	const timeoutError = () => new DOMException("The request timed out after 10 seconds", "TimeoutError");
 
 	it.each([
 		{ name: "proxies.create", call: (av: AgentVault) => av.proxies.create({ name: "edge-proxy" }) },
 		{ name: "proxies.rotateToken", call: (av: AgentVault) => av.proxies.rotateToken(PROXY_ID) },
 		{ name: "sessions.create", call: (av: AgentVault) => av.sessions.create({ accessBundle: "release" }) },
-		{ name: "accessBundles.create", call: (av: AgentVault) => av.accessBundles.create({ name: "release" }) }
+		{ name: "accessBundles.create", call: (av: AgentVault) => av.accessBundles.create({ name: "release" }) },
+		// A retry after a lost response would report every grantee as skipped.
+		{ name: "accessBundles.grant", call: (av: AgentVault) => av.accessBundles.grant(BUNDLE_ID, { userIds: [USER_ID] }) },
+		{ name: "accessBundles.revoke", call: (av: AgentVault) => av.accessBundles.revoke(BUNDLE_ID, { userIds: [USER_ID] }) }
 	])("$name isn't retried once the request may have reached the server", async ({ call }) => {
 		vi.useFakeTimers();
 		fetchSpy.mockImplementation(async () => {
 			throw timeoutError();
 		});
 
-		const assertion = expect(call(agentVault)).rejects.toThrow("This operation was aborted");
+		const assertion = expect(call(agentVault)).rejects.toThrow("The request timed out after 10 seconds");
 		await vi.runAllTimersAsync();
 		await assertion;
 		expect(fetchSpy).toHaveBeenCalledTimes(1);
@@ -739,5 +749,68 @@ describe("agent vault retries", () => {
 		await vi.runAllTimersAsync();
 		expect(await updated).toEqual(PROXY);
 		expect(fetchSpy).toHaveBeenCalledTimes(2);
+	});
+});
+
+describe("agent vault IDs", () => {
+	// fetch resolves "." and ".." like directories, so revoke("..") would reach the route that removes members from
+	// Agent Vault, which takes the same body.
+	it.each(["", ".", ".."])("refuses the ID %j before sending a request", async (id) => {
+		await expect(agentVault.accessBundles.revoke(id, { userIds: [USER_ID] })).rejects.toThrow(InfisicalSDKError);
+		await expect(agentVault.sessions.get(id)).rejects.toThrow(/^Invalid ID/);
+		expect(fetchSpy).not.toHaveBeenCalled();
+	});
+
+	it("sends an ID that is a dot segment only once decoded, encoded so it stays one segment", async () => {
+		respondWith({ session: SESSION });
+		await agentVault.sessions.get("%2e%2e");
+		expect(lastRequest().path).toBe("/api/v1/agent-vault/sessions/%252e%252e");
+	});
+});
+
+describe("agent vault errors", () => {
+	it("throws an InfisicalSDKRequestError, exported from the package root, with the status code", async () => {
+		respondWith({ statusCode: 404, message: "This machine identity has no delegation", error: "NotFound" }, 404);
+		const error = await agentVault.delegations.get(MACHINE_IDENTITY_ID).catch((err: unknown) => err);
+		expect(error).toBeInstanceOf(InfisicalSDKRequestError);
+		expect((error as InfisicalSDKRequestError).statusCode).toBe(404);
+		expect((error as Error).message).toMatch(/\[StatusCode=404\] This machine identity has no delegation$/);
+		expect((error as Error).cause).toBeDefined();
+	});
+
+	it("says a request timed out, and after how long, with the timeout in cause", async () => {
+		vi.useFakeTimers();
+		fetchSpy.mockImplementation(
+			(_url: string, init: RequestInit) =>
+				new Promise((_resolve, reject) => init.signal!.addEventListener("abort", () => reject(init.signal!.reason)))
+		);
+
+		const error = agentVault.sessions.create({ accessBundle: "release" }).catch((err: unknown) => err);
+		await vi.advanceTimersByTimeAsync(10_000);
+		const thrown = (await error) as InfisicalSDKError;
+
+		expect(thrown).toBeInstanceOf(InfisicalSDKError);
+		expect(thrown.message).toBe("The request timed out after 10 seconds");
+		expect((thrown.cause as DOMException).name).toBe("TimeoutError");
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+	});
+
+	it("keeps the network error in cause, so a reset connection can be told apart from a timeout", async () => {
+		const reset = new TypeError("fetch failed", { cause: Object.assign(new Error("ECONNRESET"), { code: "ECONNRESET" }) });
+		fetchSpy.mockRejectedValue(reset);
+
+		const thrown = (await agentVault.sessions.create({ accessBundle: "release" }).catch((err: unknown) => err)) as Error;
+
+		expect(thrown).toBeInstanceOf(InfisicalSDKError);
+		expect(thrown.message).toBe("fetch failed");
+		expect(thrown.cause).toBe(reset);
+	});
+
+	it("throws an error the SDK raised itself as it is, without wrapping it", async () => {
+		const error = await agentVault.accessBundles
+			.list({ onBehalfOfUserEmail: USER_EMAIL, onBehalfOfUserId: USER_ID })
+			.catch((err: unknown) => err);
+		expect(error).toBeInstanceOf(InfisicalSDKError);
+		expect((error as Error).cause).toBeUndefined();
 	});
 });

@@ -97,5 +97,7 @@ export { InfisicalSDK };
 
 export * from "./api/types";
 
+export { InfisicalSDKError, InfisicalSDKRequestError } from "./custom/errors";
+
 // Export types and enums from schemas
 export { TDynamicSecretProvider, DynamicSecretProviders, SqlProviders } from "./custom/schemas";

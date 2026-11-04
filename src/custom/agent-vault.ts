@@ -326,6 +326,7 @@ export default class AgentVaultClient {
 		listGrantees: (accessBundleId: string, options: ListAgentVaultGranteesOptions = {}) =>
 			run(() =>
 				this.apiClient.accessBundles.listGrantees(accessBundleId, {
+					actorType: options.actorType,
 					search: options.search,
 					limit: options.limit ?? 20,
 					offset: options.offset ?? 0
@@ -339,6 +340,7 @@ export default class AgentVaultClient {
 		listAvailableGrantees: (accessBundleId: string, options: ListAgentVaultGranteesOptions = {}) =>
 			run(() =>
 				this.apiClient.accessBundles.listAvailableGrantees(accessBundleId, {
+					actorType: options.actorType,
 					search: options.search,
 					limit: options.limit ?? 20,
 					offset: options.offset ?? 0
@@ -393,9 +395,9 @@ export default class AgentVaultClient {
 			),
 
 		/**
-		 * Gets which users a machine identity can create Agent Vault sessions on behalf of. Fails with status 404 if the
-		 * machine identity has no delegation.
-		 * @returns The delegation, with the access bundles the machine identity can't create sessions over.
+		 * Gets which users a machine identity can create Agent Vault sessions on behalf of. If the machine identity has no
+		 * delegation, throws an InfisicalSDKRequestError whose statusCode is 404.
+		 * @returns The delegation, with the access bundles the machine identity can't create sessions with.
 		 */
 		get: (machineIdentityId: string) =>
 			run(async () => {
