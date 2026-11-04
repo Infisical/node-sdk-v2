@@ -26,12 +26,11 @@ export class InfisicalSDKRequestError extends Error {
 export const newInfisicalError = (error: any) => {
   if (isFetchHttpError(error)) {
     const data = error.response.data as Record<string, unknown> | null | undefined;
+    // A validation error (422) lists its issues in message, which isn't a string, so the whole body is the message.
+    const isValidationError = error.response.status === 422 && typeof data === "object" && data !== null;
 
-    if (typeof data?.message === "string") {
-      let message: string = data.message;
-      if (error.response.status === 422) {
-        message = JSON.stringify(data);
-      }
+    if (typeof data?.message === "string" || isValidationError) {
+      const message = isValidationError ? JSON.stringify(data) : String(data?.message);
 
       return new InfisicalSDKRequestError(message, {
         url: error.response.config.url,
