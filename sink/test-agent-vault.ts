@@ -1,15 +1,17 @@
 // Walks through every Agent Vault method against a live Infisical instance, the way the Python SDK's
 // release was verified: an admin sets up an access bundle and a delegation, then a machine identity
-// starts a session on behalf of a user.
+// starts a session on behalf of a user. The admin also starts sessions with inline services.
 //
-// You need, on an Infisical version with sessions on behalf of users and proxy descriptions:
+// You need, on an Infisical version with sessions on behalf of users, proxy descriptions, inline services and the
+// service-hosts traffic policy:
 // - ADMIN_CLIENT_ID / ADMIN_CLIENT_SECRET: universal auth for a machine identity with the Admin role in Agent Vault.
 // - AGENT_CLIENT_ID / AGENT_CLIENT_SECRET / AGENT_MACHINE_IDENTITY_ID: a machine identity that's a member of
 //   Agent Vault and has no delegation yet. delegations.set replaces a delegation, so the script stops if it has one.
 // - USER_ID / USER_EMAIL: a user who's a member of Agent Vault directly, not only through a group.
 // - SITE_URL: optional, defaults to http://localhost:8080.
 //
-// It only deletes what it creates: a proxy, an access bundle (with its grants) and the agent's delegation.
+// It only deletes what it creates: a proxy, an access bundle (with its grants) and the agent's delegation, and it
+// revokes the sessions it starts.
 //
 // Run it with a TypeScript runner, such as: npx tsx sink/test-agent-vault.ts
 import { InfisicalSDK } from "../src";
@@ -67,7 +69,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 	// the step checks the response, so a failed check still leaves it for cleanup.
 	let proxyId: string | undefined;
 	let bundleId: string | undefined;
-	let sessionId: string | undefined;
+	const openSessionIds = new Set<string>();
 	let delegationSet = false;
 
 	try {
@@ -88,13 +90,18 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 				const res = await adminVault.proxies.create({
 					name: `sdk-check-${suffix}`,
 					description: "Node SDK check",
-					trafficPolicy: AgentVaultTrafficPolicy.BundleHosts,
+					trafficPolicy: AgentVaultTrafficPolicy.ServiceHosts,
 					allowedHosts: ["api.github.com", "*.slack.com"]
 				});
 				proxyId = res.proxy.id;
 				return res;
 			},
-			(res) => (res.proxyToken && res.proxy.allowedHosts === "api.github.com,*.slack.com" ? undefined : `got ${JSON.stringify(res.proxy)}`)
+			(res) =>
+				res.proxyToken &&
+				res.proxy.trafficPolicy === AgentVaultTrafficPolicy.ServiceHosts &&
+				res.proxy.allowedHosts === "api.github.com,*.slack.com"
+					? undefined
+					: `got ${JSON.stringify(res.proxy)}`
 		);
 		const proxy = created.proxy;
 		await step("proxies.list by description", () => adminVault.proxies.list({ search: "Node SDK check" }), (res) =>
@@ -183,7 +190,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 			"sessions.create on behalf of the user",
 			async () => {
 				const res = await agentVault.sessions.create({ accessBundle: bundle.name, onBehalfOfUserEmail: userEmail, label: "node sdk check" });
-				sessionId = res.id;
+				openSessionIds.add(res.id);
 				return res;
 			},
 			(res) => {
@@ -204,11 +211,83 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 			"sessions.revoke",
 			async () => {
 				const revoked = await agentVault.sessions.revoke(session.id);
-				sessionId = undefined;
+				openSessionIds.delete(session.id);
 				return revoked;
 			},
 			(res) => (res.status === "revoked" ? undefined : `status is ${res.status}`)
 		);
+
+		console.log("\n== inline services ==");
+		// Unique values, so a check can tell if one of them comes back in a response.
+		const token = `sdk-check-token-${suffix}`;
+		const headerValue = `sdk-check-team-${suffix}`;
+		const inlineService = {
+			type: "http" as const,
+			name: "httpbin",
+			hostPattern: "httpbin.org",
+			allowedMethods: ["GET" as const],
+			credential: { type: "bearer" as const, value: token },
+			customHeaders: [{ name: "X-Team", value: headerValue }]
+		};
+		const inline = await step(
+			"sessions.create with only inline services, as the admin",
+			async () => {
+				const res = await adminVault.sessions.create({ services: [inlineService], ttl: "15m", label: "node sdk inline check" });
+				openSessionIds.add(res.id);
+				return res;
+			},
+			(res) => {
+				const returned = JSON.stringify(res.services);
+				if (returned.includes(token) || returned.includes(headerValue)) return "the response includes a secret";
+				const [service] = res.services;
+				return res.accessBundles.length === 0 && res.services.length === 1 && service.name === "httpbin" && service.credential.type === "bearer"
+					? undefined
+					: `got ${JSON.stringify(res)}`;
+			}
+		);
+		await step("sessions.get returns the inline services", () => adminVault.sessions.get(inline.id), (res) =>
+			res.services.length === 1 && res.services[0].hostPattern === "httpbin.org" && res.services[0].customHeaders[0]?.name === "X-Team"
+				? undefined
+				: `got ${JSON.stringify(res.services)}`
+		);
+		const withBundle = await step(
+			"sessions.create with an access bundle and inline services, as the admin",
+			async () => {
+				const res = await adminVault.sessions.create({
+					accessBundle: bundle.name,
+					services: [{ ...inlineService, name: "httpbin-eu", hostPattern: "eu.httpbin.org" }],
+					ttl: "15m"
+				});
+				openSessionIds.add(res.id);
+				return res;
+			},
+			(res) => (res.accessBundles.length === 1 && res.services.length === 1 ? undefined : `got ${JSON.stringify(res)}`)
+		);
+		// The agent is a member, not an admin. If the server lets it through anyway, the session is still revoked below.
+		await step(
+			"sessions.create with inline services as a member is refused",
+			async () => {
+				try {
+					const res = await agentVault.sessions.create({ services: [inlineService], ttl: "15m" });
+					openSessionIds.add(res.id);
+					return "the session was created";
+				} catch (err) {
+					return (err as Error).message;
+				}
+			},
+			(outcome) => (/Only an Agent Vault admin can send services/.test(outcome) ? undefined : `got ${outcome}`)
+		);
+		for (const created of [inline, withBundle]) {
+			await step(
+				`sessions.revoke ${created.label ?? created.id}`,
+				async () => {
+					const revoked = await adminVault.sessions.revoke(created.id);
+					openSessionIds.delete(created.id);
+					return revoked;
+				},
+				(res) => (res.status === "revoked" ? undefined : `status is ${res.status}`)
+			);
+		}
 
 		console.log("\n== cleanup ==");
 		await step(
@@ -250,10 +329,10 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 	} finally {
 		// Remove what a failed step left behind. If a removal fails too, name what's left so it can be removed by hand.
 		const leftovers: [string, () => Promise<unknown>][] = [];
-		const leftSession = sessionId;
 		const leftBundle = bundleId;
 		const leftProxy = proxyId;
-		if (leftSession) leftovers.push([`revoke session ${leftSession}`, () => agentVault.sessions.revoke(leftSession)]);
+		// The admin can revoke every session, including the agent's.
+		for (const id of openSessionIds) leftovers.push([`revoke session ${id}`, () => adminVault.sessions.revoke(id)]);
 		if (delegationSet) leftovers.push([`delete the delegation of machine identity ${agentId}`, () => adminVault.delegations.delete(agentId)]);
 		if (leftBundle) leftovers.push([`delete access bundle ${leftBundle}`, () => adminVault.accessBundles.delete(leftBundle)]);
 		if (leftProxy) leftovers.push([`delete proxy ${leftProxy}`, () => adminVault.proxies.delete(leftProxy)]);

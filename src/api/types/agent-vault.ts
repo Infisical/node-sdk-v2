@@ -3,8 +3,10 @@
 
 /** Which hosts an agent may reach through an Agent Vault proxy. */
 export enum AgentVaultTrafficPolicy {
+	/** Agents can reach any host. */
 	AnyHost = "any-host",
-	BundleHosts = "bundle-hosts"
+	/** Agents can reach only the hosts that the session's services cover, plus the proxy's allowed hosts. */
+	ServiceHosts = "service-hosts"
 }
 
 /** The status of an Agent Vault session. */
@@ -52,7 +54,7 @@ export interface AgentVaultProxy {
 	/** When the proxy's certificate authority expires. */
 	rootCaExpiresAt: string | null;
 	trafficPolicy?: AgentVaultTrafficPolicy;
-	/** Hosts that stay reachable under the "bundle-hosts" traffic policy, as one comma-separated string. */
+	/** Hosts that stay reachable under the "service-hosts" traffic policy, as one comma-separated string. */
 	allowedHosts?: string | null;
 	/** How often, in seconds, the proxy refreshes its sessions and settings. */
 	pollInterval?: number;
@@ -121,6 +123,109 @@ export interface AgentVaultSessionAccessBundle {
 	position: number;
 }
 
+// Inline services: services sent with a session, instead of added to an access bundle. Their values are sent exactly
+// as given, since inline services can't use variables, so no value can contain text in double braces.
+
+/** An HTTP method that a service can allow. */
+export type AgentVaultHttpMethod = "GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS";
+
+/** A part of a request where the proxy replaces a substitution's placeholder with its value. */
+export type AgentVaultSubstitutionSurface = "path" | "query" | "header" | "body";
+
+/** How an agent talks to an MCP server: "streamable-http", or "sse" for the legacy HTTP+SSE transport. */
+export type AgentVaultMcpTransport = "streamable-http" | "sse";
+
+/** A token that the proxy writes to a header of each request. */
+export interface AgentVaultInlineBearerCredential {
+	type: "bearer";
+	/** The token. */
+	value: string;
+	/** The header the token is written to. Defaults to "Authorization". */
+	headerName?: string;
+	/** Written before the token, separated by one space. Defaults to "Bearer" for the Authorization header, and to nothing for any other header. */
+	headerPrefix?: string;
+}
+
+/** A username and password that the proxy sends as HTTP basic authentication. Set a username, a password, or both. */
+export interface AgentVaultInlineBasicCredential {
+	type: "basic";
+	username?: string;
+	password?: string;
+}
+
+/** No credential: the proxy lets requests to the service's hosts through without attaching one. */
+export interface AgentVaultInlinePassthroughCredential {
+	type: "passthrough";
+}
+
+/** A header that the proxy attaches to each request, besides the credential. */
+export interface AgentVaultInlineCustomHeader {
+	name: string;
+	/** Written before the value, separated by one space. */
+	prefix?: string;
+	value: string;
+}
+
+/** A placeholder that the proxy replaces with a real value before forwarding a request. */
+export interface AgentVaultInlineSubstitution {
+	placeholder: string;
+	/** The parts of each request where the proxy replaces the placeholder. */
+	surfaces: AgentVaultSubstitutionSurface[];
+	value: string;
+}
+
+/** An HTTP API sent with a session. */
+export interface AgentVaultInlineHttpServiceInput {
+	type: "http";
+	/** A name for the service, in lowercase letters, numbers and hyphens. Without one, the service goes by its first host. */
+	name?: string;
+	/** The hosts the service covers, separated by commas, such as "api.github.com". A leading "*." matches exactly one label. */
+	hostPattern: string;
+	/** The HTTP methods the service allows. Defaults to every method. */
+	allowedMethods?: AgentVaultHttpMethod[];
+	/** The path prefixes the service allows, matched on whole segments. Defaults to every path. */
+	allowedPathPrefixes?: string[];
+	credential: AgentVaultInlineBearerCredential | AgentVaultInlineBasicCredential | AgentVaultInlinePassthroughCredential;
+	/** Up to 20. */
+	customHeaders?: AgentVaultInlineCustomHeader[];
+	/** Up to 20. */
+	substitutions?: AgentVaultInlineSubstitution[];
+}
+
+/** An MCP server sent with a session. */
+export interface AgentVaultInlineMcpServiceInput {
+	type: "mcp";
+	/** A name for the service, in lowercase letters, numbers and hyphens. Without one, the service goes by its host. */
+	name?: string;
+	/** The MCP server's URL, such as "https://mcp.example.com/mcp". The service covers its host. */
+	serverUrl: string;
+	transport: AgentVaultMcpTransport;
+	credential: AgentVaultInlineBearerCredential;
+	/** Up to 20. */
+	customHeaders?: AgentVaultInlineCustomHeader[];
+}
+
+/** A service sent with a session: an HTTP API or an MCP server. */
+export type AgentVaultInlineServiceInput = AgentVaultInlineHttpServiceInput | AgentVaultInlineMcpServiceInput;
+
+/** A service sent with a session, as Infisical returns it: without its token, password or values. */
+export interface AgentVaultInlineService {
+	id: string;
+	/** The name the service was sent with, or its first host if it was sent without one. */
+	name: string;
+	type: "http" | "mcp";
+	serverUrl: string | null;
+	transport: AgentVaultMcpTransport | null;
+	hostPattern: string;
+	/** The HTTP methods the service allows, or null for every method. */
+	allowedMethods: AgentVaultHttpMethod[] | null;
+	/** The path prefixes the service allows, or null for every path. */
+	allowedPathPrefixes: string[] | null;
+	credential: { type: "bearer"; headerName: string; headerPrefix: string } | { type: "basic" } | { type: "passthrough" };
+	customHeaders: { name: string; prefix: string }[];
+	substitutions: { placeholder: string; surfaces: AgentVaultSubstitutionSurface[] }[];
+}
+
 export interface AgentVaultSession {
 	id: string;
 	label: string | null;
@@ -133,6 +238,8 @@ export interface AgentVaultSession {
 	revokedAt: string | null;
 	createdAt: string;
 	accessBundles: AgentVaultSessionAccessBundle[];
+	/** The services sent with the session when it was created, without their secrets. Empty if it carries only an access bundle. */
+	services: AgentVaultInlineService[];
 }
 
 /** An Agent Vault session as returned at creation. */
@@ -145,6 +252,8 @@ export interface CreatedAgentVaultSession {
 	expiresAt: string | null;
 	createdAt: string;
 	accessBundles: AgentVaultSessionAccessBundle[];
+	/** The services sent with the session, without their secrets. Empty if it carries only an access bundle. */
+	services: AgentVaultInlineService[];
 }
 
 export interface ListAgentVaultSessionsResponse {
@@ -161,8 +270,8 @@ export interface CreateAgentVaultSessionResponse {
 }
 
 export interface RevokeAgentVaultSessionResponse {
-	/** The revoked session. The response leaves out its access bundles. */
-	session: Omit<AgentVaultSession, "accessBundles">;
+	/** The revoked session. The response leaves out its access bundles and inline services. */
+	session: Omit<AgentVaultSession, "accessBundles" | "services">;
 }
 
 // Access bundles
@@ -215,6 +324,8 @@ export interface AgentVaultService {
 	hostPattern: string;
 	allowedMethods: string[] | null;
 	allowedPathPrefixes: string[] | null;
+	/** The MCP tools that agents can call through the service, by exact name, or null for every tool. */
+	allowedTools?: string[] | null;
 	credential: Record<string, unknown>;
 	customHeaders: Record<string, unknown>[];
 	substitutions: Record<string, unknown>[];
@@ -274,7 +385,14 @@ export interface AgentVaultGroup {
 }
 
 /** A user, machine identity or group that an Agent Vault access bundle is granted to. */
-export type AgentVaultGrantee = (AgentVaultUser | AgentVaultMachineIdentity | AgentVaultGroup) & {
+export type AgentVaultGrantee = (
+	| (AgentVaultUser & {
+			/** Whether the user still has an unaccepted invitation to the organization. */
+			isOrgMembershipPending?: boolean;
+	  })
+	| AgentVaultMachineIdentity
+	| AgentVaultGroup
+) & {
 	/** When the access bundle was granted. */
 	grantedAt: string;
 };
@@ -403,7 +521,8 @@ export interface ListAgentVaultProxiesRequest {
 
 export interface CreateAgentVaultProxyRequest {
 	name: string;
-	trafficPolicy: AgentVaultTrafficPolicy | `${AgentVaultTrafficPolicy}`;
+	/** "bundle-hosts" is the old name of "service-hosts", and the only one an Infisical version from before the rename accepts. */
+	trafficPolicy: AgentVaultTrafficPolicy | `${AgentVaultTrafficPolicy}` | "bundle-hosts";
 	allowedHosts?: string;
 	pollInterval: number;
 	description?: string;
@@ -411,7 +530,8 @@ export interface CreateAgentVaultProxyRequest {
 
 export interface UpdateAgentVaultProxyRequest {
 	name?: string;
-	trafficPolicy?: AgentVaultTrafficPolicy | `${AgentVaultTrafficPolicy}`;
+	/** "bundle-hosts" is the old name of "service-hosts", and the only one an Infisical version from before the rename accepts. */
+	trafficPolicy?: AgentVaultTrafficPolicy | `${AgentVaultTrafficPolicy}` | "bundle-hosts";
 	/** null removes every allowed host. */
 	allowedHosts?: string | null;
 	pollInterval?: number;
@@ -428,7 +548,8 @@ export interface ListAgentVaultSessionsRequest {
 }
 
 export interface CreateAgentVaultSessionRequest {
-	accessBundles: string[];
+	accessBundles?: string[];
+	services?: AgentVaultInlineServiceInput[];
 	ttl?: string;
 	label?: string;
 	onBehalfOf?: { userEmail: string } | { userId: string };
@@ -515,9 +636,9 @@ export type ListAgentVaultProxiesOptions = {
 export type CreateAgentVaultProxyOptions = {
 	/** The name of the proxy (a slug, at most 64 characters). */
 	name: string;
-	/** Which hosts an agent may reach through this proxy. Defaults to "any-host". */
+	/** Which hosts an agent may reach through this proxy: "any-host", or "service-hosts" for only the hosts that the session's services cover. Defaults to "any-host". */
 	trafficPolicy?: AgentVaultTrafficPolicy | `${AgentVaultTrafficPolicy}`;
-	/** Hosts that stay reachable under the "bundle-hosts" traffic policy even though no access bundle covers them. A list or a comma-separated string. */
+	/** Hosts that stay reachable under the "service-hosts" traffic policy even though none of the session's services cover them. A list or a comma-separated string. */
 	allowedHosts?: string | string[];
 	/** How often, in seconds, the proxy refreshes its sessions and settings (10-300). Defaults to 60. */
 	pollInterval?: number;
@@ -528,9 +649,9 @@ export type CreateAgentVaultProxyOptions = {
 export type UpdateAgentVaultProxyOptions = {
 	/** The new name of the proxy (a slug, at most 64 characters). */
 	name?: string;
-	/** Which hosts an agent may reach through this proxy. */
+	/** Which hosts an agent may reach through this proxy: "any-host", or "service-hosts" for only the hosts that the session's services cover. */
 	trafficPolicy?: AgentVaultTrafficPolicy | `${AgentVaultTrafficPolicy}`;
-	/** Hosts that stay reachable under the "bundle-hosts" traffic policy. A list or a comma-separated string. Pass an empty list or string to remove every allowed host. */
+	/** Hosts that stay reachable under the "service-hosts" traffic policy. A list or a comma-separated string. Pass an empty list or string to remove every allowed host. */
 	allowedHosts?: string | string[];
 	/** How often, in seconds, the proxy refreshes its sessions and settings (10-300). */
 	pollInterval?: number;
@@ -552,8 +673,14 @@ export type ListAgentVaultSessionsOptions = {
 };
 
 export type CreateAgentVaultSessionOptions = {
-	/** The name of the access bundle the session carries. */
-	accessBundle: string;
+	/** The name of the access bundle the session carries. Pass accessBundle, services, or both. */
+	accessBundle?: string;
+	/**
+	 * Services the session carries itself, instead of or beside its access bundle's: up to 20. Only Agent Vault admins
+	 * can send them. Each has the same fields as a service in an access bundle, except that its name is optional, its
+	 * values can't use variables, and it can't use OAuth or member-provided values.
+	 */
+	services?: AgentVaultInlineServiceInput[];
 	/** How long the session lasts: a duration such as "30m", "8h" or "7d" (at least 1m), or "never". Defaults to "7d", or to "1h" for a session on behalf of a user. */
 	ttl?: string;
 	/** A short description of what the session is for, such as "nightly deploy". Up to 128 characters, without line breaks, tabs, or invisible characters. */

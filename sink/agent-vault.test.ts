@@ -46,7 +46,8 @@ const SESSION = {
 	expiresAt: "2026-10-27T01:00:00.000Z",
 	revokedAt: null,
 	createdAt: CREATED_AT,
-	accessBundles: SESSION_ACCESS_BUNDLES
+	accessBundles: SESSION_ACCESS_BUNDLES,
+	services: []
 };
 const CREATED_SESSION = {
 	id: SESSION_ID,
@@ -54,7 +55,30 @@ const CREATED_SESSION = {
 	token: "session-token",
 	expiresAt: SESSION.expiresAt,
 	createdAt: CREATED_AT,
-	accessBundles: SESSION_ACCESS_BUNDLES
+	accessBundles: SESSION_ACCESS_BUNDLES,
+	services: []
+};
+// A service sent with a session, as the SDK takes it and as the API returns it (without its secrets).
+const INLINE_SERVICE_INPUT = {
+	type: "http" as const,
+	name: "github",
+	hostPattern: "api.github.com",
+	allowedMethods: ["GET" as const],
+	credential: { type: "bearer" as const, value: "github-token" },
+	customHeaders: [{ name: "X-Team", value: "platform" }]
+};
+const INLINE_SERVICE = {
+	id: "8e2f4a6c-1b3d-4e5f-9a7b-2c4d6e8f0a1b",
+	name: "github",
+	type: "http",
+	serverUrl: null,
+	transport: null,
+	hostPattern: "api.github.com",
+	allowedMethods: ["GET"],
+	allowedPathPrefixes: null,
+	credential: { type: "bearer", headerName: "Authorization", headerPrefix: "Bearer" },
+	customHeaders: [{ name: "X-Team", prefix: "" }],
+	substitutions: []
 };
 const BUNDLE = { id: BUNDLE_ID, name: "release", description: null, createdAt: CREATED_AT, updatedAt: CREATED_AT };
 const SERVICE = {
@@ -94,8 +118,8 @@ const AVAILABLE_MEMBER = { type: "group", id: GROUP_ID, name: "Engineering", rol
 let fetchSpy: ReturnType<typeof vi.fn>;
 let agentVault: AgentVault;
 
-const respondWith = (payload: unknown) => {
-	fetchSpy.mockImplementation(async () => new Response(JSON.stringify(payload), { status: 200 }));
+const respondWith = (payload: unknown, status = 200) => {
+	fetchSpy.mockImplementation(async () => new Response(JSON.stringify(payload), { status }));
 };
 
 const lastRequest = () => {
@@ -223,7 +247,7 @@ const ROUTES: {
 		call: (av) => av.sessions.revoke(SESSION_ID),
 		method: "POST",
 		path: `/sessions/${SESSION_ID}/revoke`,
-		response: { session: { ...SESSION, accessBundles: undefined, status: "revoked", revokedAt: CREATED_AT } },
+		response: { session: { ...SESSION, accessBundles: undefined, services: undefined, status: "revoked", revokedAt: CREATED_AT } },
 		returns: (res) => res.session
 	},
 	{
@@ -431,10 +455,140 @@ describe("agent vault proxies", () => {
 		respondWith({ proxy: PROXY, proxyToken: "proxy-token" });
 		await agentVault.proxies.create({
 			name: "edge-proxy",
-			trafficPolicy: AgentVaultTrafficPolicy.BundleHosts,
+			trafficPolicy: AgentVaultTrafficPolicy.ServiceHosts,
 			allowedHosts: ["api.github.com", "*.slack.com"]
 		});
-		expect(lastRequest().body).toMatchObject({ trafficPolicy: "bundle-hosts", allowedHosts: "api.github.com,*.slack.com" });
+		expect(lastRequest().body).toMatchObject({ allowedHosts: "api.github.com,*.slack.com" });
+	});
+});
+
+describe("agent vault traffic policy", () => {
+	// service-hosts is the new name of bundle-hosts. Infisical still accepts bundle-hosts and stores it, and a version
+	// from before the rename accepts only bundle-hosts, so the SDK sends service-hosts as bundle-hosts.
+	const hostsOnly = [AgentVaultTrafficPolicy.ServiceHosts, "service-hosts" as const];
+
+	it.each(hostsOnly)("create sends %s as bundle-hosts, which every Infisical version accepts", async (trafficPolicy) => {
+		respondWith({ proxy: PROXY, proxyToken: "proxy-token" });
+		await agentVault.proxies.create({ name: "edge-proxy", trafficPolicy });
+		expect(lastRequest().body.trafficPolicy).toBe("bundle-hosts");
+	});
+
+	it.each(hostsOnly)("update sends %s as bundle-hosts, which every Infisical version accepts", async (trafficPolicy) => {
+		respondWith({ proxy: PROXY });
+		await agentVault.proxies.update(PROXY_ID, { trafficPolicy });
+		expect(lastRequest().body).toEqual({ trafficPolicy: "bundle-hosts" });
+	});
+
+	it("sends any-host as it is", async () => {
+		respondWith({ proxy: PROXY, proxyToken: "proxy-token" });
+		await agentVault.proxies.create({ name: "edge-proxy", trafficPolicy: AgentVaultTrafficPolicy.AnyHost });
+		expect(lastRequest().body.trafficPolicy).toBe("any-host");
+		await agentVault.proxies.update(PROXY_ID, { trafficPolicy: "any-host" });
+		expect(lastRequest().body).toEqual({ trafficPolicy: "any-host" });
+	});
+
+	// Infisical with service-hosts returns it, and a version from before the rename returns bundle-hosts.
+	it.each(["service-hosts", "bundle-hosts"])("reports %s from every proxy response as service-hosts", async (returned) => {
+		const proxy = { ...PROXY, trafficPolicy: returned };
+		const reported: unknown[] = [];
+
+		respondWith({ proxies: [proxy], totalCount: 1 });
+		reported.push((await agentVault.proxies.list()).proxies[0].trafficPolicy);
+		respondWith({ proxy, proxyToken: "proxy-token" });
+		reported.push((await agentVault.proxies.create({ name: "edge-proxy" })).proxy.trafficPolicy);
+		respondWith({ proxy });
+		reported.push((await agentVault.proxies.update(PROXY_ID, { pollInterval: 30 })).trafficPolicy);
+		respondWith({ proxy, proxyToken: "proxy-token" });
+		reported.push((await agentVault.proxies.rotateToken(PROXY_ID)).proxy.trafficPolicy);
+		respondWith({ proxy });
+		reported.push((await agentVault.proxies.revoke(PROXY_ID)).trafficPolicy);
+
+		expect(reported).toEqual(Array(5).fill("service-hosts"));
+	});
+
+	it("leaves any-host, and a member's proxy without settings, as they are", async () => {
+		const { trafficPolicy, allowedHosts, pollInterval, createdAt, ...memberView } = PROXY;
+		respondWith({ proxies: [PROXY, memberView], totalCount: 2 });
+		const { proxies } = await agentVault.proxies.list();
+		expect(proxies).toEqual([PROXY, memberView]);
+	});
+});
+
+describe("agent vault inline services", () => {
+	it("create sends services without an access bundle", async () => {
+		respondWith({ session: { ...CREATED_SESSION, accessBundles: [], services: [INLINE_SERVICE] } });
+		const created = await agentVault.sessions.create({ services: [INLINE_SERVICE_INPUT], ttl: "15m" });
+		expect(lastRequest().body).toEqual({ services: [INLINE_SERVICE_INPUT], ttl: "15m" });
+		expect(created.services).toEqual([INLINE_SERVICE]);
+	});
+
+	it("create sends an access bundle and services together", async () => {
+		respondWith({ session: { ...CREATED_SESSION, services: [INLINE_SERVICE] } });
+		await agentVault.sessions.create({ accessBundle: "release", services: [INLINE_SERVICE_INPUT] });
+		expect(lastRequest().body).toEqual({ accessBundles: ["release"], services: [INLINE_SERVICE_INPUT] });
+	});
+
+	it("create sends an empty access bundle name, so the server rejects it instead of dropping it", async () => {
+		respondWith({ session: CREATED_SESSION });
+		await agentVault.sessions.create({ accessBundle: "" });
+		expect(lastRequest().body).toEqual({ accessBundles: [""] });
+	});
+
+	it("returns a session's services as the API sends them", async () => {
+		respondWith({ session: { ...SESSION, services: [INLINE_SERVICE] } });
+		expect((await agentVault.sessions.get(SESSION_ID)).services).toEqual([INLINE_SERVICE]);
+	});
+
+	// Infisical's validation errors list their issues in message, as an array rather than a string.
+	it("keeps the server's explanation when it refuses a request with 422", async () => {
+		respondWith(
+			{
+				reqId: "req-1",
+				statusCode: 422,
+				message: [
+					{
+						code: "too_big",
+						maximum: 20,
+						path: ["services"],
+						message: "A session can have at most 20 services. Add the others to an access bundle and name it in accessBundles."
+					}
+				],
+				error: "ValidationFailure"
+			},
+			422
+		);
+		await expect(agentVault.sessions.create({ services: [INLINE_SERVICE_INPUT] })).rejects.toThrow(
+			/\[StatusCode=422\].*at most 20 services/
+		);
+	});
+
+	it("uses the server's message for a refusal that isn't a validation error", async () => {
+		respondWith(
+			{
+				statusCode: 403,
+				message: "Only an Agent Vault admin can send services with a session. Name an access bundle instead.",
+				error: "PermissionDenied"
+			},
+			403
+		);
+		await expect(agentVault.sessions.create({ services: [INLINE_SERVICE_INPUT] })).rejects.toThrow(
+			/\[StatusCode=403\] Only an Agent Vault admin can send services with a session/
+		);
+	});
+
+	// An Infisical version without inline services leaves services out of every session.
+	it("gives sessions from an Infisical version without inline services an empty list of them", async () => {
+		const { services, ...olderSession } = SESSION;
+		const { services: createdServices, ...olderCreated } = CREATED_SESSION;
+
+		respondWith({ sessions: [olderSession], totalCount: 1 });
+		expect((await agentVault.sessions.list()).sessions[0].services).toEqual([]);
+		respondWith({ session: olderSession });
+		expect((await agentVault.sessions.get(SESSION_ID)).services).toEqual([]);
+		respondWith({ session: olderSession });
+		expect((await agentVault.sessions.update(SESSION_ID, { label: null })).services).toEqual([]);
+		respondWith({ session: olderCreated });
+		expect((await agentVault.sessions.create({ accessBundle: "release" })).services).toEqual([]);
 	});
 });
 

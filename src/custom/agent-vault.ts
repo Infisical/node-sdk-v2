@@ -1,6 +1,7 @@
 import { AgentVaultApi } from "../api/endpoints/agent-vault";
 import {
 	AddAgentVaultDelegationSubjectsOptions,
+	AgentVaultInlineService,
 	AgentVaultSessionScope,
 	AgentVaultTrafficPolicy,
 	CreateAgentVaultAccessBundleOptions,
@@ -35,6 +36,26 @@ const joinHosts = (allowedHosts: string | string[] | undefined): string | null |
 /** The API takes a list in a query parameter as one comma-separated string. */
 const joinList = (values: string[] | undefined) => (values?.length ? values.join(",") : undefined);
 
+/**
+ * The old name of service-hosts. Infisical stores service-hosts under this name and still accepts it, while a version
+ * from before the rename accepts and returns only this name.
+ */
+const SERVICE_HOSTS_OLD_NAME = "bundle-hosts";
+
+/** Sends service-hosts by its old name, which every Infisical version accepts. */
+const toWireTrafficPolicy = (trafficPolicy: AgentVaultTrafficPolicy | `${AgentVaultTrafficPolicy}` | undefined) =>
+	trafficPolicy === AgentVaultTrafficPolicy.ServiceHosts ? SERVICE_HOSTS_OLD_NAME : trafficPolicy;
+
+/** Reports the old name, which an Infisical version from before the rename returns, as service-hosts. */
+const viewProxy = <T extends { trafficPolicy?: AgentVaultTrafficPolicy }>(proxy: T): T =>
+	(proxy.trafficPolicy as string | undefined) === SERVICE_HOSTS_OLD_NAME
+		? { ...proxy, trafficPolicy: AgentVaultTrafficPolicy.ServiceHosts }
+		: proxy;
+
+/** Gives a session from an Infisical version without inline services an empty list of them, rather than none. */
+const withServices = <T extends { services: AgentVaultInlineService[] }>(session: T): T =>
+	session.services ? session : { ...session, services: [] };
+
 /** The API names a user by email address or by ID, not both. */
 const checkOneUser = (onBehalfOfUserEmail: string | undefined, onBehalfOfUserId: string | undefined) => {
 	if (isSet(onBehalfOfUserEmail) && isSet(onBehalfOfUserId)) {
@@ -62,31 +83,33 @@ export default class AgentVaultClient {
 		 * @returns The proxies and totalCount. A proxy's settings are only set for admins.
 		 */
 		list: (options: ListAgentVaultProxiesOptions = {}) =>
-			run(() =>
-				this.apiClient.proxies.list({
+			run(async () => {
+				const res = await this.apiClient.proxies.list({
 					search: options.search,
 					orderBy: options.orderBy ?? "createdAt",
 					orderDirection: options.orderDirection ?? "desc",
 					limit: options.limit ?? 20,
 					offset: options.offset ?? 0
-				})
-			),
+				});
+				return { ...res, proxies: res.proxies.map(viewProxy) };
+			}),
 
 		/**
 		 * Registers an Agent Vault proxy and issues its proxy token.
 		 * @returns The proxy and its proxyToken. The token is only returned once.
 		 */
 		create: (options: CreateAgentVaultProxyOptions) =>
-			run(() =>
-				this.apiClient.proxies.create({
+			run(async () => {
+				const res = await this.apiClient.proxies.create({
 					name: options.name,
-					trafficPolicy: options.trafficPolicy ?? AgentVaultTrafficPolicy.AnyHost,
+					trafficPolicy: toWireTrafficPolicy(options.trafficPolicy) ?? AgentVaultTrafficPolicy.AnyHost,
 					// An empty value means no allowed hosts, so it's left out.
 					allowedHosts: joinHosts(options.allowedHosts) ?? undefined,
 					pollInterval: options.pollInterval ?? 60,
 					description: options.description
-				})
-			),
+				});
+				return { ...res, proxy: viewProxy(res.proxy) };
+			}),
 
 		/**
 		 * Updates an Agent Vault proxy's name, description or settings. Only the values you pass are changed.
@@ -96,13 +119,13 @@ export default class AgentVaultClient {
 			run(async () => {
 				const res = await this.apiClient.proxies.update(proxyId, {
 					name: options.name,
-					trafficPolicy: options.trafficPolicy,
+					trafficPolicy: toWireTrafficPolicy(options.trafficPolicy),
 					// An empty value removes every allowed host, which the API takes as null.
 					allowedHosts: joinHosts(options.allowedHosts),
 					pollInterval: options.pollInterval,
 					description: options.description
 				});
-				return res.proxy;
+				return viewProxy(res.proxy);
 			}),
 
 		/**
@@ -119,7 +142,11 @@ export default class AgentVaultClient {
 		 * Issues a new proxy token. The proxy's earlier tokens stop working and it gets a new certificate authority.
 		 * @returns The proxy and its new proxyToken. The token is only returned once.
 		 */
-		rotateToken: (proxyId: string) => run(() => this.apiClient.proxies.rotateToken(proxyId)),
+		rotateToken: (proxyId: string) =>
+			run(async () => {
+				const res = await this.apiClient.proxies.rotateToken(proxyId);
+				return { ...res, proxy: viewProxy(res.proxy) };
+			}),
 
 		/**
 		 * Revokes an Agent Vault proxy's token. Rotate its token to bring it back.
@@ -128,7 +155,7 @@ export default class AgentVaultClient {
 		revoke: (proxyId: string) =>
 			run(async () => {
 				const res = await this.apiClient.proxies.revoke(proxyId);
-				return res.proxy;
+				return viewProxy(res.proxy);
 			})
 	};
 
@@ -139,15 +166,16 @@ export default class AgentVaultClient {
 		 * @returns The sessions and totalCount.
 		 */
 		list: (options: ListAgentVaultSessionsOptions = {}) =>
-			run(() =>
-				this.apiClient.sessions.list({
+			run(async () => {
+				const res = await this.apiClient.sessions.list({
 					scope: options.scope ?? AgentVaultSessionScope.Mine,
 					status: joinList(options.statuses),
 					search: options.search,
 					limit: options.limit ?? 20,
 					offset: options.offset ?? 0
-				})
-			),
+				});
+				return { ...res, sessions: res.sessions.map(withServices) };
+			}),
 
 		/**
 		 * Gets an Agent Vault session.
@@ -156,12 +184,15 @@ export default class AgentVaultClient {
 		get: (sessionId: string) =>
 			run(async () => {
 				const res = await this.apiClient.sessions.get(sessionId);
-				return res.session;
+				return withServices(res.session);
 			}),
 
 		/**
-		 * Creates an Agent Vault session with an access bundle you can reach, or, as a machine identity with a
-		 * delegation, on behalf of a user.
+		 * Creates an Agent Vault session with an access bundle you can reach, services of its own, or both, for yourself
+		 * or, as a machine identity with a delegation, on behalf of a user.
+		 *
+		 * Only Agent Vault admins can send services with a session. On behalf of a user, that's your machine identity:
+		 * the user doesn't need the Admin role, and the services don't use the user's personal values.
 		 *
 		 * To start a session on behalf of a user, you must be a machine identity whose delegation covers the user. The
 		 * proxy then uses the user's personal values, and the session can use only an access bundle that both the user
@@ -183,13 +214,15 @@ export default class AgentVaultClient {
 				}
 
 				const res = await this.apiClient.sessions.create({
-					accessBundles: [options.accessBundle],
+					// Left out without an access bundle, for a session that carries only services of its own.
+					accessBundles: isSet(options.accessBundle) ? [options.accessBundle] : undefined,
+					services: options.services,
 					// Left out unless you pass it, so the server picks the default: 7d, or 1h on behalf of a user.
 					ttl: options.ttl,
 					label: options.label,
 					onBehalfOf
 				});
-				return res.session;
+				return withServices(res.session);
 			}),
 
 		/**
@@ -200,12 +233,12 @@ export default class AgentVaultClient {
 			run(async () => {
 				// The label is always sent: null removes it, and the API rejects a request without one.
 				const res = await this.apiClient.sessions.update(sessionId, { label: options.label });
-				return res.session;
+				return withServices(res.session);
 			}),
 
 		/**
 		 * Revokes an Agent Vault session. Revoking an already revoked session changes nothing.
-		 * @returns The revoked session. The response leaves out its access bundles; call get for them.
+		 * @returns The revoked session. The response leaves out its access bundles and inline services; call get for them.
 		 */
 		revoke: (sessionId: string) =>
 			run(async () => {
