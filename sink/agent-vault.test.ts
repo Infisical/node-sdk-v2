@@ -742,7 +742,15 @@ describe("agent vault retries", () => {
 		{ name: "accessBundles.create", call: (av: AgentVault) => av.accessBundles.create({ name: "release" }) },
 		// A retry after a lost response would report every grantee as skipped.
 		{ name: "accessBundles.grant", call: (av: AgentVault) => av.accessBundles.grant(BUNDLE_ID, { userIds: [USER_ID] }) },
-		{ name: "accessBundles.revoke", call: (av: AgentVault) => av.accessBundles.revoke(BUNDLE_ID, { userIds: [USER_ID] }) }
+		{ name: "accessBundles.revoke", call: (av: AgentVault) => av.accessBundles.revoke(BUNDLE_ID, { userIds: [USER_ID] }) },
+		// A retry after a lost response would fail with a 404 for a delete that worked.
+		{ name: "proxies.delete", call: (av: AgentVault) => av.proxies.delete(PROXY_ID) },
+		{ name: "accessBundles.delete", call: (av: AgentVault) => av.accessBundles.delete(BUNDLE_ID) },
+		{ name: "delegations.delete", call: (av: AgentVault) => av.delegations.delete(MACHINE_IDENTITY_ID) },
+		{
+			name: "delegations.removeSubjects",
+			call: (av: AgentVault) => av.delegations.removeSubjects(MACHINE_IDENTITY_ID, { userIds: [USER_ID] })
+		}
 	])("$name isn't retried once the request may have reached the server", async ({ call }) => {
 		vi.useFakeTimers();
 		fetchSpy.mockImplementation(async () => {

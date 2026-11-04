@@ -54,7 +54,8 @@ const segment = (id: string) => {
 // Creates and token rotations use postOnce, so a network error after the request may have reached the server
 // isn't retried: a retry could create a second proxy, session or access bundle, or rotate a token twice. Grants
 // and revokes use postOnce and deleteOnce too: they report which grantees changed, so after a lost response, a
-// retry would report each one as skipped.
+// retry would report each one as skipped. Deletes use deleteOnce as well: after a lost response, a retry would fail
+// with a 404 for a delete that worked.
 export class AgentVaultApi {
 	constructor(private apiClient: ApiClient) {}
 
@@ -69,7 +70,7 @@ export class AgentVaultApi {
 			this.apiClient.patch<SingleAgentVaultProxyResponse>(`${BASE_PATH}/proxies/${segment(proxyId)}`, data),
 
 		delete: (proxyId: string) =>
-			this.apiClient.delete<DeleteAgentVaultProxyResponse>(`${BASE_PATH}/proxies/${segment(proxyId)}`),
+			this.apiClient.deleteOnce<DeleteAgentVaultProxyResponse>(`${BASE_PATH}/proxies/${segment(proxyId)}`),
 
 		rotateToken: (proxyId: string) =>
 			this.apiClient.postOnce<AgentVaultProxyWithTokenResponse>(
@@ -116,7 +117,7 @@ export class AgentVaultApi {
 			),
 
 		delete: (accessBundleId: string) =>
-			this.apiClient.delete<SingleAgentVaultAccessBundleResponse>(
+			this.apiClient.deleteOnce<SingleAgentVaultAccessBundleResponse>(
 				`${BASE_PATH}/access-bundles/${segment(accessBundleId)}`
 			),
 
@@ -161,7 +162,7 @@ export class AgentVaultApi {
 			),
 
 		delete: (machineIdentityId: string) =>
-			this.apiClient.delete<DeleteAgentVaultDelegationResponse>(
+			this.apiClient.deleteOnce<DeleteAgentVaultDelegationResponse>(
 				`${BASE_PATH}/delegations/${segment(machineIdentityId)}`
 			),
 
@@ -172,7 +173,7 @@ export class AgentVaultApi {
 			),
 
 		removeSubjects: (machineIdentityId: string, data: ChangeAgentVaultDelegationSubjectsRequest) =>
-			this.apiClient.delete<RemoveAgentVaultDelegationSubjectsResponse>(
+			this.apiClient.deleteOnce<RemoveAgentVaultDelegationSubjectsResponse>(
 				`${BASE_PATH}/delegations/${segment(machineIdentityId)}/subjects`,
 				{ data }
 			),
