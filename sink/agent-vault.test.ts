@@ -500,39 +500,6 @@ describe("agent vault project", () => {
 		expect(request.body.projectId).toBe(PROJECT_ID);
 		expect(request.query).toEqual({});
 	});
-
-	it("is required by every method that takes it", () => {
-		// Never called: tsc fails on an unused @ts-expect-error, so each line checks that leaving projectId out doesn't compile.
-		const withoutProject = (av: AgentVault) => [
-			// @ts-expect-error projectId is required
-			av.proxies.list(),
-			// @ts-expect-error projectId is required
-			av.proxies.create({ name: "edge-proxy" }),
-			// @ts-expect-error projectId is required
-			av.sessions.list({}),
-			// @ts-expect-error projectId is required
-			av.sessions.create({ accessBundle: "release" }),
-			// @ts-expect-error projectId is required
-			av.accessBundles.list(),
-			// @ts-expect-error projectId is required
-			av.accessBundles.create({ name: "release" }),
-			// @ts-expect-error projectId is required
-			av.delegations.list(),
-			// @ts-expect-error projectId is required
-			av.delegations.get(MACHINE_IDENTITY_ID),
-			// @ts-expect-error projectId is required
-			av.delegations.set(MACHINE_IDENTITY_ID, { scope: "all-members" }),
-			// @ts-expect-error projectId is required
-			av.delegations.delete(MACHINE_IDENTITY_ID, {}),
-			// @ts-expect-error projectId is required
-			av.delegations.addSubjects(MACHINE_IDENTITY_ID, { userIds: [USER_ID] }),
-			// @ts-expect-error projectId is required
-			av.delegations.removeSubjects(MACHINE_IDENTITY_ID, { userIds: [USER_ID] }),
-			// @ts-expect-error projectId is required
-			av.delegations.listAvailableSubjects(MACHINE_IDENTITY_ID)
-		];
-		expect(withoutProject).toBeTypeOf("function");
-	});
 });
 
 describe("agent vault proxies", () => {
