@@ -54,6 +54,7 @@ const SESSION = {
 };
 const CREATED_SESSION = {
 	id: SESSION_ID,
+	projectId: PROJECT_ID,
 	label: null,
 	token: "session-token",
 	expiresAt: SESSION.expiresAt,
@@ -698,6 +699,12 @@ describe("agent vault sessions", () => {
 		const created = await agentVault.sessions.create({ ...PROJECT, accessBundle: "release", ttl: "1h" });
 		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, accessBundle: "release", ttl: "1h" });
 		expect(created.accessBundle).toEqual({ id: BUNDLE_ID, name: "release" });
+	});
+
+	it("create reads the project the session belongs to", async () => {
+		respondWith({ session: CREATED_SESSION });
+		const created = await agentVault.sessions.create({ ...PROJECT, accessBundle: "release" });
+		expect(created.projectId).toBe(PROJECT_ID);
 	});
 
 	it.each(["nightly deploy", null])("update always sends the label (%j)", async (label) => {

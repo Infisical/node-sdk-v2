@@ -245,6 +245,8 @@ export interface AgentVaultSession {
 /** An Agent Vault session as returned at creation. */
 export interface CreatedAgentVaultSession {
 	id: string;
+	/** The Agent Vault project the session belongs to. */
+	projectId: string;
 	label: string | null;
 	/** The session token. It's only returned once. */
 	token: string;
