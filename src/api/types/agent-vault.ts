@@ -636,12 +636,12 @@ export interface ListAvailableAgentVaultDelegationSubjectsRequest {
 // Options for the SDK's Agent Vault methods
 
 export type AgentVaultProjectOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project. */
 	projectId?: string;
 };
 
 export type ListAgentVaultProxiesOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project to list proxies from. */
 	projectId?: string;
 	/** Match proxies by name or description. */
 	search?: string;
@@ -656,7 +656,7 @@ export type ListAgentVaultProxiesOptions = {
 };
 
 export type CreateAgentVaultProxyOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project to register the proxy in. */
 	projectId?: string;
 	/** The name of the proxy (a slug, at most 64 characters). */
 	name: string;
@@ -684,7 +684,7 @@ export type UpdateAgentVaultProxyOptions = {
 };
 
 export type ListAgentVaultSessionsOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project to list sessions from. */
 	projectId?: string;
 	/** Whose sessions to list: your own ("mine") or everyone's ("all", admins only). Defaults to "mine". */
 	scope?: AgentVaultSessionScope | `${AgentVaultSessionScope}`;
@@ -699,7 +699,7 @@ export type ListAgentVaultSessionsOptions = {
 };
 
 export type CreateAgentVaultSessionOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project to create the session in. */
 	projectId?: string;
 	/** The name of the access bundle the session carries. Pass accessBundle, services, or both. */
 	accessBundle?: string;
@@ -726,7 +726,7 @@ export type UpdateAgentVaultSessionOptions = {
 };
 
 export type ListAgentVaultAccessBundlesOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project to list access bundles from. */
 	projectId?: string;
 	/** Match access bundles by name or description. */
 	search?: string;
@@ -749,7 +749,7 @@ export type ListAgentVaultAccessBundlesOptions = {
 };
 
 export type CreateAgentVaultAccessBundleOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project to create the access bundle in. */
 	projectId?: string;
 	/** The name of the access bundle (a slug, at most 64 characters). */
 	name: string;
@@ -794,7 +794,7 @@ export type RevokeAgentVaultAccessBundleOptions = {
 };
 
 export type ListAgentVaultDelegationsOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project to list delegations from. */
 	projectId?: string;
 	/** Only return the delegations of these machine identities, up to 100. */
 	machineIdentityIds?: string[];
@@ -805,7 +805,7 @@ export type ListAgentVaultDelegationsOptions = {
 };
 
 export type SetAgentVaultDelegationOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project the delegation belongs to. */
 	projectId?: string;
 	/** "all-members" for every Agent Vault member, admins included, or "selected" for only the users and groups you name. */
 	scope: AgentVaultDelegationScope | `${AgentVaultDelegationScope}`;
@@ -816,7 +816,7 @@ export type SetAgentVaultDelegationOptions = {
 };
 
 export type AddAgentVaultDelegationSubjectsOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project the delegation belongs to. */
 	projectId?: string;
 	/** The users to add, up to 100. Each must be a member of Agent Vault. Users the delegation already names are skipped. */
 	userIds?: string[];
@@ -825,7 +825,7 @@ export type AddAgentVaultDelegationSubjectsOptions = {
 };
 
 export type RemoveAgentVaultDelegationSubjectsOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project the delegation belongs to. */
 	projectId?: string;
 	/** The users to take out, up to 100. Users the delegation doesn't name are skipped. */
 	userIds?: string[];
@@ -834,7 +834,7 @@ export type RemoveAgentVaultDelegationSubjectsOptions = {
 };
 
 export type ListAvailableAgentVaultDelegationSubjectsOptions = {
-	/** The ID of the Agent Vault project. For now, Infisical uses your organization's first Agent Vault project if you leave it out. */
+	/** The ID of the Agent Vault project the delegation belongs to. */
 	projectId?: string;
 	/** List only users or only groups. Defaults to both. */
 	actorType?: AgentVaultMemberType.User | AgentVaultMemberType.Group | "user" | "group";
