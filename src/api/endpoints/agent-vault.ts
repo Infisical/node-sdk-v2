@@ -1,6 +1,7 @@
 import { InfisicalSDKError } from "../../custom/errors";
 import { ApiClient } from "../base";
 import {
+	AgentVaultProjectQuery,
 	AgentVaultProxyWithTokenResponse,
 	ChangeAgentVaultAccessBundleGrantsRequest,
 	ChangeAgentVaultDelegationSubjectsRequest,
@@ -150,32 +151,44 @@ export class AgentVaultApi {
 		list: (params: ListAgentVaultDelegationsRequest) =>
 			this.apiClient.get<ListAgentVaultDelegationsResponse>(`${BASE_PATH}/delegations`, { params }),
 
-		get: (machineIdentityId: string) =>
+		get: (machineIdentityId: string, params: AgentVaultProjectQuery) =>
 			this.apiClient.get<SingleAgentVaultDelegationResponse>(
-				`${BASE_PATH}/delegations/${segment(machineIdentityId)}`
+				`${BASE_PATH}/delegations/${segment(machineIdentityId)}`,
+				{ params }
 			),
 
-		set: (machineIdentityId: string, data: SetAgentVaultDelegationRequest) =>
+		set: (machineIdentityId: string, data: SetAgentVaultDelegationRequest, params: AgentVaultProjectQuery) =>
 			this.apiClient.put<SingleAgentVaultDelegationResponse>(
 				`${BASE_PATH}/delegations/${segment(machineIdentityId)}`,
-				data
+				data,
+				{ params }
 			),
 
-		delete: (machineIdentityId: string) =>
+		delete: (machineIdentityId: string, params: AgentVaultProjectQuery) =>
 			this.apiClient.deleteOnce<DeleteAgentVaultDelegationResponse>(
-				`${BASE_PATH}/delegations/${segment(machineIdentityId)}`
+				`${BASE_PATH}/delegations/${segment(machineIdentityId)}`,
+				{ params }
 			),
 
-		addSubjects: (machineIdentityId: string, data: ChangeAgentVaultDelegationSubjectsRequest) =>
+		addSubjects: (
+			machineIdentityId: string,
+			data: ChangeAgentVaultDelegationSubjectsRequest,
+			params: AgentVaultProjectQuery
+		) =>
 			this.apiClient.post<SingleAgentVaultDelegationResponse>(
 				`${BASE_PATH}/delegations/${segment(machineIdentityId)}/subjects`,
-				data
+				data,
+				{ params }
 			),
 
-		removeSubjects: (machineIdentityId: string, data: ChangeAgentVaultDelegationSubjectsRequest) =>
+		removeSubjects: (
+			machineIdentityId: string,
+			data: ChangeAgentVaultDelegationSubjectsRequest,
+			params: AgentVaultProjectQuery
+		) =>
 			this.apiClient.deleteOnce<RemoveAgentVaultDelegationSubjectsResponse>(
 				`${BASE_PATH}/delegations/${segment(machineIdentityId)}/subjects`,
-				{ data }
+				{ data, params }
 			),
 
 		listAvailableSubjects: (machineIdentityId: string, params: ListAvailableAgentVaultDelegationSubjectsRequest) =>

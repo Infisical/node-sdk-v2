@@ -8,6 +8,7 @@
 // - AGENT_CLIENT_ID / AGENT_CLIENT_SECRET / AGENT_MACHINE_IDENTITY_ID: a machine identity that's a member of
 //   Agent Vault and has no delegation yet. delegations.set replaces a delegation, so the script stops if it has one.
 // - USER_ID / USER_EMAIL: a user who's a member of Agent Vault directly, not only through a group.
+// - PROJECT_ID: the ID of the Agent Vault project that the machine identities and the user are members of.
 // - SITE_URL: optional, defaults to http://localhost:8080.
 //
 // It only deletes what it creates: a proxy, an access bundle (with its grants) and the agent's delegation, and it
@@ -49,6 +50,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 
 (async () => {
 	const siteUrl = process.env.SITE_URL || "http://localhost:8080";
+	const project = { projectId: env("PROJECT_ID") };
 	const agentId = env("AGENT_MACHINE_IDENTITY_ID");
 	const userId = env("USER_ID");
 	const userEmail = env("USER_EMAIL");
@@ -74,7 +76,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 
 	try {
 		// delegations.set replaces a delegation, so the script must not run against one someone set up.
-		const existing = await adminVault.delegations.get(agentId).catch((err: Error) => {
+		const existing = await adminVault.delegations.get(agentId, project).catch((err: Error) => {
 			if (err instanceof InfisicalSDKRequestError && err.statusCode === 404) return null;
 			throw err;
 		});
@@ -88,6 +90,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 			"proxies.create",
 			async () => {
 				const res = await adminVault.proxies.create({
+					...project,
 					name: `sdk-check-${suffix}`,
 					description: "Node SDK check",
 					trafficPolicy: AgentVaultTrafficPolicy.ServiceHosts,
@@ -104,7 +107,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 					: `got ${JSON.stringify(res.proxy)}`
 		);
 		const proxy = created.proxy;
-		await step("proxies.list by description", () => adminVault.proxies.list({ search: "Node SDK check" }), (res) =>
+		await step("proxies.list by description", () => adminVault.proxies.list({ ...project, search: "Node SDK check" }), (res) =>
 			res.proxies.some((listed) => listed.id === proxy.id) ? undefined : "proxy not listed"
 		);
 		await step("proxies.update removes the description and allowed hosts", () =>
@@ -127,7 +130,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 
 		console.log("\n== access bundles ==");
 		const bundle = await step("accessBundles.create", async () => {
-			const res = await adminVault.accessBundles.create({ name: `sdk-check-${suffix}`, description: "Node SDK check" });
+			const res = await adminVault.accessBundles.create({ ...project, name: `sdk-check-${suffix}`, description: "Node SDK check" });
 			bundleId = res.id;
 			return res;
 		});
@@ -137,7 +140,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 		await step("accessBundles.update removes the description", () => adminVault.accessBundles.update(bundle.id, { description: "" }), (res) =>
 			res.description === null ? undefined : `description is ${JSON.stringify(res.description)}`
 		);
-		await step("accessBundles.list", () => adminVault.accessBundles.list({ search: bundle.name }), (res) =>
+		await step("accessBundles.list", () => adminVault.accessBundles.list({ ...project, search: bundle.name }), (res) =>
 			res.accessBundles.some((listed) => listed.id === bundle.id) ? undefined : "bundle not listed"
 		);
 		await step("accessBundles.listAvailableGrantees", () => adminVault.accessBundles.listAvailableGrantees(bundle.id));
@@ -155,41 +158,41 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 
 		console.log("\n== delegations ==");
 		await step("delegations.listAvailableSubjects (users)", () =>
-			adminVault.delegations.listAvailableSubjects(agentId, { actorType: AgentVaultMemberType.User, search: userEmail }),
+			adminVault.delegations.listAvailableSubjects(agentId, { ...project, actorType: AgentVaultMemberType.User, search: userEmail }),
 			(res) => (res.members.some((member) => member.id === userId) ? undefined : "user isn't available")
 		);
 		await step(
 			"delegations.set",
 			async () => {
-				const delegation = await adminVault.delegations.set(agentId, { scope: AgentVaultDelegationScope.Selected, userIds: [userId] });
+				const delegation = await adminVault.delegations.set(agentId, { ...project, scope: AgentVaultDelegationScope.Selected, userIds: [userId] });
 				delegationSet = true;
 				return delegation;
 			},
 			(delegation) => (delegation.users.some((user) => user.id === userId) ? undefined : `got ${JSON.stringify(delegation)}`)
 		);
-		await step("delegations.get", () => adminVault.delegations.get(agentId), (delegation) =>
+		await step("delegations.get", () => adminVault.delegations.get(agentId, project), (delegation) =>
 			Array.isArray(delegation.missingAccessBundles) ? undefined : "no missingAccessBundles"
 		);
-		await step("delegations.list for the agent", () => adminVault.delegations.list({ machineIdentityIds: [agentId] }), (res) =>
+		await step("delegations.list for the agent", () => adminVault.delegations.list({ ...project, machineIdentityIds: [agentId] }), (res) =>
 			res.delegations.length === 1 ? undefined : `got ${res.delegations.length} delegations`
 		);
 		await step("delegations.addSubjects skips a user it already names", () =>
-			adminVault.delegations.addSubjects(agentId, { userIds: [userId] }),
+			adminVault.delegations.addSubjects(agentId, { ...project, userIds: [userId] }),
 			(delegation) => (delegation.users.length === 1 ? undefined : `got ${delegation.users.length} users`)
 		);
 
 		console.log("\n== sessions on behalf of the user ==");
-		await step("accessBundles.list on behalf of the user", () => agentVault.accessBundles.list({ onBehalfOfUserEmail: userEmail }), (res) =>
+		await step("accessBundles.list on behalf of the user", () => agentVault.accessBundles.list({ ...project, onBehalfOfUserEmail: userEmail }), (res) =>
 			res.accessBundles.some((listed) => listed.id === bundle.id) ? undefined : "bundle not listed for the user"
 		);
 		await expectRejection("sessions.create with both an email and an ID", () =>
-			agentVault.sessions.create({ accessBundle: bundle.name, onBehalfOfUserEmail: userEmail, onBehalfOfUserId: userId }),
+			agentVault.sessions.create({ ...project, accessBundle: bundle.name, onBehalfOfUserEmail: userEmail, onBehalfOfUserId: userId }),
 			/not both/
 		);
 		const session = await step(
 			"sessions.create on behalf of the user",
 			async () => {
-				const res = await agentVault.sessions.create({ accessBundle: bundle.name, onBehalfOfUserEmail: userEmail, label: "node sdk check" });
+				const res = await agentVault.sessions.create({ ...project, accessBundle: bundle.name, onBehalfOfUserEmail: userEmail, label: "node sdk check" });
 				openSessionIds.add(res.id);
 				return res;
 			},
@@ -201,7 +204,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 		await step("sessions.get names the user", () => agentVault.sessions.get(session.id), (res) =>
 			res.onBehalfOf?.id === userId ? undefined : `onBehalfOf is ${JSON.stringify(res.onBehalfOf)}`
 		);
-		await step("sessions.list by the user's email", () => agentVault.sessions.list({ search: userEmail }), (res) =>
+		await step("sessions.list by the user's email", () => agentVault.sessions.list({ ...project, search: userEmail }), (res) =>
 			res.sessions.some((listed) => listed.id === session.id) ? undefined : "session not listed"
 		);
 		await step("sessions.update removes the label", () => agentVault.sessions.update(session.id, { label: null }), (res) =>
@@ -232,7 +235,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 		const inline = await step(
 			"sessions.create with only inline services, as the admin",
 			async () => {
-				const res = await adminVault.sessions.create({ services: [inlineService], ttl: "15m", label: "node sdk inline check" });
+				const res = await adminVault.sessions.create({ ...project, services: [inlineService], ttl: "15m", label: "node sdk inline check" });
 				openSessionIds.add(res.id);
 				return res;
 			},
@@ -254,6 +257,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 			"sessions.create with an access bundle and inline services, as the admin",
 			async () => {
 				const res = await adminVault.sessions.create({
+					...project,
 					accessBundle: bundle.name,
 					services: [{ ...inlineService, name: "httpbin-eu", hostPattern: "eu.httpbin.org" }],
 					ttl: "15m"
@@ -268,7 +272,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 			"sessions.create with inline services as a member is refused",
 			async () => {
 				try {
-					const res = await agentVault.sessions.create({ services: [inlineService], ttl: "15m" });
+					const res = await agentVault.sessions.create({ ...project, services: [inlineService], ttl: "15m" });
 					openSessionIds.add(res.id);
 					return "the session was created";
 				} catch (err) {
@@ -293,7 +297,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 		await step(
 			"delegations.removeSubjects of the last user returns null",
 			async () => {
-				const delegation = await adminVault.delegations.removeSubjects(agentId, { userIds: [userId] });
+				const delegation = await adminVault.delegations.removeSubjects(agentId, { ...project, userIds: [userId] });
 				if (delegation === null) delegationSet = false;
 				return delegation;
 			},
@@ -302,14 +306,14 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 		await step(
 			"delegations.addSubjects creates a delegation",
 			async () => {
-				const delegation = await adminVault.delegations.addSubjects(agentId, { userIds: [userId] });
+				const delegation = await adminVault.delegations.addSubjects(agentId, { ...project, userIds: [userId] });
 				delegationSet = true;
 				return delegation;
 			},
 			(delegation) => (delegation.scope === AgentVaultDelegationScope.Selected ? undefined : `scope is ${delegation.scope}`)
 		);
 		await step("delegations.delete", async () => {
-			const deleted = await adminVault.delegations.delete(agentId);
+			const deleted = await adminVault.delegations.delete(agentId, project);
 			delegationSet = false;
 			return deleted;
 		});
@@ -333,7 +337,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 		const leftProxy = proxyId;
 		// The admin can revoke every session, including the agent's.
 		for (const id of openSessionIds) leftovers.push([`revoke session ${id}`, () => adminVault.sessions.revoke(id)]);
-		if (delegationSet) leftovers.push([`delete the delegation of machine identity ${agentId}`, () => adminVault.delegations.delete(agentId)]);
+		if (delegationSet) leftovers.push([`delete the delegation of machine identity ${agentId}`, () => adminVault.delegations.delete(agentId, project)]);
 		if (leftBundle) leftovers.push([`delete access bundle ${leftBundle}`, () => adminVault.accessBundles.delete(leftBundle)]);
 		if (leftProxy) leftovers.push([`delete proxy ${leftProxy}`, () => adminVault.proxies.delete(leftProxy)]);
 
