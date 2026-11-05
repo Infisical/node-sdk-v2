@@ -514,11 +514,11 @@ export interface RemoveAgentVaultDelegationSubjectsResponse {
 
 /** The query string of a delegation route, which names the project because a machine identity can be in several. */
 export interface AgentVaultProjectQuery {
-	projectId?: string;
+	projectId: string;
 }
 
 export interface ListAgentVaultProxiesRequest {
-	projectId?: string;
+	projectId: string;
 	search?: string;
 	orderBy: "name" | "createdAt";
 	orderDirection: AgentVaultOrderDirection;
@@ -527,7 +527,7 @@ export interface ListAgentVaultProxiesRequest {
 }
 
 export interface CreateAgentVaultProxyRequest {
-	projectId?: string;
+	projectId: string;
 	name: string;
 	/** "bundle-hosts" is the old name of "service-hosts", and the only one an Infisical version from before the rename accepts. */
 	trafficPolicy: AgentVaultTrafficPolicy | `${AgentVaultTrafficPolicy}` | "bundle-hosts";
@@ -547,7 +547,7 @@ export interface UpdateAgentVaultProxyRequest {
 }
 
 export interface ListAgentVaultSessionsRequest {
-	projectId?: string;
+	projectId: string;
 	scope: AgentVaultSessionScope | `${AgentVaultSessionScope}`;
 	/** Statuses, separated by commas. */
 	status?: string;
@@ -557,7 +557,7 @@ export interface ListAgentVaultSessionsRequest {
 }
 
 export interface CreateAgentVaultSessionRequest {
-	projectId?: string;
+	projectId: string;
 	accessBundle?: string;
 	services?: AgentVaultInlineServiceInput[];
 	ttl?: string;
@@ -570,7 +570,7 @@ export interface UpdateAgentVaultSessionRequest {
 }
 
 export interface ListAgentVaultAccessBundlesRequest {
-	projectId?: string;
+	projectId: string;
 	search?: string;
 	requiresSetup?: boolean;
 	granted?: boolean;
@@ -583,7 +583,7 @@ export interface ListAgentVaultAccessBundlesRequest {
 }
 
 export interface CreateAgentVaultAccessBundleRequest {
-	projectId?: string;
+	projectId: string;
 	name: string;
 	description?: string;
 }
@@ -607,7 +607,7 @@ export interface ChangeAgentVaultAccessBundleGrantsRequest {
 }
 
 export interface ListAgentVaultDelegationsRequest {
-	projectId?: string;
+	projectId: string;
 	/** Machine identity IDs, separated by commas. */
 	machineIdentityIds?: string;
 	limit: number;
@@ -626,7 +626,7 @@ export interface ChangeAgentVaultDelegationSubjectsRequest {
 }
 
 export interface ListAvailableAgentVaultDelegationSubjectsRequest {
-	projectId?: string;
+	projectId: string;
 	actorType?: AgentVaultMemberType.User | AgentVaultMemberType.Group | "user" | "group";
 	search?: string;
 	limit: number;
@@ -637,12 +637,12 @@ export interface ListAvailableAgentVaultDelegationSubjectsRequest {
 
 export type AgentVaultProjectOptions = {
 	/** The ID of the Agent Vault project. */
-	projectId?: string;
+	projectId: string;
 };
 
 export type ListAgentVaultProxiesOptions = {
 	/** The ID of the Agent Vault project to list proxies from. */
-	projectId?: string;
+	projectId: string;
 	/** Match proxies by name or description. */
 	search?: string;
 	/** What to sort proxies by. Defaults to "createdAt". */
@@ -657,7 +657,7 @@ export type ListAgentVaultProxiesOptions = {
 
 export type CreateAgentVaultProxyOptions = {
 	/** The ID of the Agent Vault project to register the proxy in. */
-	projectId?: string;
+	projectId: string;
 	/** The name of the proxy (a slug, at most 64 characters). */
 	name: string;
 	/** Which hosts an agent may reach through this proxy: "any-host", or "service-hosts" for only the hosts that the session's services cover. Defaults to "any-host". */
@@ -685,7 +685,7 @@ export type UpdateAgentVaultProxyOptions = {
 
 export type ListAgentVaultSessionsOptions = {
 	/** The ID of the Agent Vault project to list sessions from. */
-	projectId?: string;
+	projectId: string;
 	/** Whose sessions to list: your own ("mine") or everyone's ("all", admins only). Defaults to "mine". */
 	scope?: AgentVaultSessionScope | `${AgentVaultSessionScope}`;
 	/** Only return sessions with any of these statuses. */
@@ -700,7 +700,7 @@ export type ListAgentVaultSessionsOptions = {
 
 export type CreateAgentVaultSessionOptions = {
 	/** The ID of the Agent Vault project to create the session in. */
-	projectId?: string;
+	projectId: string;
 	/** The name of the access bundle the session carries. Pass accessBundle, services, or both. */
 	accessBundle?: string;
 	/**
@@ -727,7 +727,7 @@ export type UpdateAgentVaultSessionOptions = {
 
 export type ListAgentVaultAccessBundlesOptions = {
 	/** The ID of the Agent Vault project to list access bundles from. */
-	projectId?: string;
+	projectId: string;
 	/** Match access bundles by name or description. */
 	search?: string;
 	/** true lists only the access bundles with services that still need your personal values, and false lists the rest. Defaults to both. */
@@ -750,7 +750,7 @@ export type ListAgentVaultAccessBundlesOptions = {
 
 export type CreateAgentVaultAccessBundleOptions = {
 	/** The ID of the Agent Vault project to create the access bundle in. */
-	projectId?: string;
+	projectId: string;
 	/** The name of the access bundle (a slug, at most 64 characters). */
 	name: string;
 	/** What the access bundle is for, up to 256 characters, without line breaks or other control characters. */
@@ -795,7 +795,7 @@ export type RevokeAgentVaultAccessBundleOptions = {
 
 export type ListAgentVaultDelegationsOptions = {
 	/** The ID of the Agent Vault project to list delegations from. */
-	projectId?: string;
+	projectId: string;
 	/** Only return the delegations of these machine identities, up to 100. */
 	machineIdentityIds?: string[];
 	/** The maximum number of delegations to return (1-100). Defaults to 100. */
@@ -806,7 +806,7 @@ export type ListAgentVaultDelegationsOptions = {
 
 export type SetAgentVaultDelegationOptions = {
 	/** The ID of the Agent Vault project the delegation belongs to. */
-	projectId?: string;
+	projectId: string;
 	/** "all-members" for every Agent Vault member, admins included, or "selected" for only the users and groups you name. */
 	scope: AgentVaultDelegationScope | `${AgentVaultDelegationScope}`;
 	/** With the "selected" scope, the users the machine identity can act on behalf of, up to 100. Each must be a member of Agent Vault. For a user who's in Agent Vault only through a group, name the group instead. */
@@ -817,7 +817,7 @@ export type SetAgentVaultDelegationOptions = {
 
 export type AddAgentVaultDelegationSubjectsOptions = {
 	/** The ID of the Agent Vault project the delegation belongs to. */
-	projectId?: string;
+	projectId: string;
 	/** The users to add, up to 100. Each must be a member of Agent Vault. Users the delegation already names are skipped. */
 	userIds?: string[];
 	/** The groups to add, up to 100. Each must be a member of Agent Vault. Groups the delegation already names are skipped. */
@@ -826,7 +826,7 @@ export type AddAgentVaultDelegationSubjectsOptions = {
 
 export type RemoveAgentVaultDelegationSubjectsOptions = {
 	/** The ID of the Agent Vault project the delegation belongs to. */
-	projectId?: string;
+	projectId: string;
 	/** The users to take out, up to 100. Users the delegation doesn't name are skipped. */
 	userIds?: string[];
 	/** The groups to take out, up to 100. Groups the delegation doesn't name are skipped. */
@@ -835,7 +835,7 @@ export type RemoveAgentVaultDelegationSubjectsOptions = {
 
 export type ListAvailableAgentVaultDelegationSubjectsOptions = {
 	/** The ID of the Agent Vault project the delegation belongs to. */
-	projectId?: string;
+	projectId: string;
 	/** List only users or only groups. Defaults to both. */
 	actorType?: AgentVaultMemberType.User | AgentVaultMemberType.Group | "user" | "group";
 	/** Match users by name, username or email address, and groups by name. */

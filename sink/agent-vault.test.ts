@@ -22,6 +22,8 @@ const USER_ID = "0d9a7c3e-5b1f-4e2a-8c6d-7f4b2e1a9c50";
 const USER_EMAIL = "jsmith@example.com";
 const GROUP_ID = "7b1e4f2a-9c3d-4a6b-8e5f-1d2c3b4a5e6f";
 const CREATED_AT = "2026-10-27T00:00:00.000Z";
+const PROJECT_ID = "4d6f8a0c-2e4b-4c6d-8f0a-1b3d5f7a9c2e";
+const PROJECT = { projectId: PROJECT_ID };
 
 const PROXY = {
 	id: PROXY_ID,
@@ -159,19 +161,19 @@ const ROUTES: {
 }[] = [
 	{
 		name: "proxies.list",
-		call: (av) => av.proxies.list(),
+		call: (av) => av.proxies.list(PROJECT),
 		method: "GET",
 		path: "/proxies",
-		query: { orderBy: "createdAt", orderDirection: "desc", limit: "20", offset: "0" },
+		query: { projectId: PROJECT_ID, orderBy: "createdAt", orderDirection: "desc", limit: "20", offset: "0" },
 		response: { proxies: [PROXY], totalCount: 1 },
 		returns: (res) => res
 	},
 	{
 		name: "proxies.create",
-		call: (av) => av.proxies.create({ name: "edge-proxy" }),
+		call: (av) => av.proxies.create({ ...PROJECT, name: "edge-proxy" }),
 		method: "POST",
 		path: "/proxies",
-		body: { name: "edge-proxy", trafficPolicy: "any-host", pollInterval: 60 },
+		body: { projectId: PROJECT_ID, name: "edge-proxy", trafficPolicy: "any-host", pollInterval: 60 },
 		response: { proxy: PROXY, proxyToken: "proxy-token" },
 		returns: (res) => res
 	},
@@ -210,10 +212,10 @@ const ROUTES: {
 	},
 	{
 		name: "sessions.list",
-		call: (av) => av.sessions.list(),
+		call: (av) => av.sessions.list(PROJECT),
 		method: "GET",
 		path: "/sessions",
-		query: { scope: "mine", limit: "20", offset: "0" },
+		query: { projectId: PROJECT_ID, scope: "mine", limit: "20", offset: "0" },
 		response: { sessions: [SESSION], totalCount: 1 },
 		returns: (res) => res
 	},
@@ -227,10 +229,10 @@ const ROUTES: {
 	},
 	{
 		name: "sessions.create",
-		call: (av) => av.sessions.create({ accessBundle: "release" }),
+		call: (av) => av.sessions.create({ ...PROJECT, accessBundle: "release" }),
 		method: "POST",
 		path: "/sessions",
-		body: { accessBundle: "release" },
+		body: { projectId: PROJECT_ID, accessBundle: "release" },
 		response: { session: CREATED_SESSION },
 		returns: (res) => res.session
 	},
@@ -253,10 +255,10 @@ const ROUTES: {
 	},
 	{
 		name: "accessBundles.list",
-		call: (av) => av.accessBundles.list(),
+		call: (av) => av.accessBundles.list(PROJECT),
 		method: "GET",
 		path: "/access-bundles",
-		query: { orderBy: "createdAt", orderDirection: "desc", limit: "20", offset: "0" },
+		query: { projectId: PROJECT_ID, orderBy: "createdAt", orderDirection: "desc", limit: "20", offset: "0" },
 		response: {
 			accessBundles: [
 				{
@@ -281,10 +283,10 @@ const ROUTES: {
 	},
 	{
 		name: "accessBundles.create",
-		call: (av) => av.accessBundles.create({ name: "release" }),
+		call: (av) => av.accessBundles.create({ ...PROJECT, name: "release" }),
 		method: "POST",
 		path: "/access-bundles",
-		body: { name: "release" },
+		body: { projectId: PROJECT_ID, name: "release" },
 		response: { accessBundle: BUNDLE },
 		returns: (res) => res.accessBundle
 	},
@@ -343,62 +345,67 @@ const ROUTES: {
 	},
 	{
 		name: "delegations.list",
-		call: (av) => av.delegations.list(),
+		call: (av) => av.delegations.list(PROJECT),
 		method: "GET",
 		path: "/delegations",
-		query: { limit: "100", offset: "0" },
+		query: { projectId: PROJECT_ID, limit: "100", offset: "0" },
 		response: { delegations: [DELEGATION], totalCount: 1 },
 		returns: (res) => res
 	},
 	{
 		name: "delegations.get",
-		call: (av) => av.delegations.get(MACHINE_IDENTITY_ID),
+		call: (av) => av.delegations.get(MACHINE_IDENTITY_ID, PROJECT),
 		method: "GET",
 		path: `/delegations/${MACHINE_IDENTITY_ID}`,
+		query: { projectId: PROJECT_ID },
 		response: { delegation: DELEGATION_DETAIL },
 		returns: (res) => res.delegation
 	},
 	{
 		name: "delegations.set",
-		call: (av) => av.delegations.set(MACHINE_IDENTITY_ID, { scope: AgentVaultDelegationScope.AllMembers }),
+		call: (av) => av.delegations.set(MACHINE_IDENTITY_ID, { ...PROJECT, scope: AgentVaultDelegationScope.AllMembers }),
 		method: "PUT",
 		path: `/delegations/${MACHINE_IDENTITY_ID}`,
+		query: { projectId: PROJECT_ID },
 		body: { scope: "all-members" },
 		response: { delegation: { ...DELEGATION_DETAIL, scope: "all-members", users: [], groups: [] } },
 		returns: (res) => res.delegation
 	},
 	{
 		name: "delegations.delete",
-		call: (av) => av.delegations.delete(MACHINE_IDENTITY_ID),
+		call: (av) => av.delegations.delete(MACHINE_IDENTITY_ID, PROJECT),
 		method: "DELETE",
 		path: `/delegations/${MACHINE_IDENTITY_ID}`,
+		query: { projectId: PROJECT_ID },
 		response: { delegation: DELEGATION },
 		returns: (res) => res.delegation
 	},
 	{
 		name: "delegations.addSubjects",
-		call: (av) => av.delegations.addSubjects(MACHINE_IDENTITY_ID, { userIds: [USER_ID] }),
+		call: (av) => av.delegations.addSubjects(MACHINE_IDENTITY_ID, { ...PROJECT, userIds: [USER_ID] }),
 		method: "POST",
 		path: `/delegations/${MACHINE_IDENTITY_ID}/subjects`,
+		query: { projectId: PROJECT_ID },
 		body: { userIds: [USER_ID] },
 		response: { delegation: DELEGATION_DETAIL },
 		returns: (res) => res.delegation
 	},
 	{
 		name: "delegations.removeSubjects",
-		call: (av) => av.delegations.removeSubjects(MACHINE_IDENTITY_ID, { groupIds: [GROUP_ID] }),
+		call: (av) => av.delegations.removeSubjects(MACHINE_IDENTITY_ID, { ...PROJECT, groupIds: [GROUP_ID] }),
 		method: "DELETE",
 		path: `/delegations/${MACHINE_IDENTITY_ID}/subjects`,
+		query: { projectId: PROJECT_ID },
 		body: { groupIds: [GROUP_ID] },
 		response: { delegation: { ...DELEGATION_DETAIL, groups: [] } },
 		returns: (res) => res.delegation
 	},
 	{
 		name: "delegations.listAvailableSubjects",
-		call: (av) => av.delegations.listAvailableSubjects(MACHINE_IDENTITY_ID),
+		call: (av) => av.delegations.listAvailableSubjects(MACHINE_IDENTITY_ID, PROJECT),
 		method: "GET",
 		path: `/delegations/${MACHINE_IDENTITY_ID}/subjects/available`,
-		query: { limit: "20", offset: "0" },
+		query: { projectId: PROJECT_ID, limit: "20", offset: "0" },
 		response: { members: [AVAILABLE_MEMBER], totalCount: 1 },
 		returns: (res) => res
 	}
@@ -413,10 +420,8 @@ describe("agent vault routes", () => {
 	});
 });
 
-// The ROUTES table above checks that a call without projectId leaves it out, so the server picks the project.
 describe("agent vault project", () => {
-	const PROJECT_ID = "4d6f8a0c-2e4b-4c6d-8f0a-1b3d5f7a9c2e";
-	const project = { projectId: PROJECT_ID };
+	const project = PROJECT;
 
 	it.each([
 		{ name: "proxies.list", call: (av: AgentVault) => av.proxies.list(project), response: { proxies: [], totalCount: 0 } },
@@ -495,6 +500,39 @@ describe("agent vault project", () => {
 		expect(request.body.projectId).toBe(PROJECT_ID);
 		expect(request.query).toEqual({});
 	});
+
+	it("is required by every method that takes it", () => {
+		// Never called: tsc fails on an unused @ts-expect-error, so each line checks that leaving projectId out doesn't compile.
+		const withoutProject = (av: AgentVault) => [
+			// @ts-expect-error projectId is required
+			av.proxies.list(),
+			// @ts-expect-error projectId is required
+			av.proxies.create({ name: "edge-proxy" }),
+			// @ts-expect-error projectId is required
+			av.sessions.list({}),
+			// @ts-expect-error projectId is required
+			av.sessions.create({ accessBundle: "release" }),
+			// @ts-expect-error projectId is required
+			av.accessBundles.list(),
+			// @ts-expect-error projectId is required
+			av.accessBundles.create({ name: "release" }),
+			// @ts-expect-error projectId is required
+			av.delegations.list(),
+			// @ts-expect-error projectId is required
+			av.delegations.get(MACHINE_IDENTITY_ID),
+			// @ts-expect-error projectId is required
+			av.delegations.set(MACHINE_IDENTITY_ID, { scope: "all-members" }),
+			// @ts-expect-error projectId is required
+			av.delegations.delete(MACHINE_IDENTITY_ID, {}),
+			// @ts-expect-error projectId is required
+			av.delegations.addSubjects(MACHINE_IDENTITY_ID, { userIds: [USER_ID] }),
+			// @ts-expect-error projectId is required
+			av.delegations.removeSubjects(MACHINE_IDENTITY_ID, { userIds: [USER_ID] }),
+			// @ts-expect-error projectId is required
+			av.delegations.listAvailableSubjects(MACHINE_IDENTITY_ID)
+		];
+		expect(withoutProject).toBeTypeOf("function");
+	});
 });
 
 describe("agent vault proxies", () => {
@@ -512,7 +550,7 @@ describe("agent vault proxies", () => {
 
 	it("create sends and returns the description", async () => {
 		respondWith({ proxy: { ...PROXY, description: "Edge traffic" }, proxyToken: "proxy-token" });
-		const created = await agentVault.proxies.create({ name: "edge-proxy", description: "Edge traffic" });
+		const created = await agentVault.proxies.create({ ...PROJECT, name: "edge-proxy", description: "Edge traffic" });
 		expect(lastRequest().body.description).toBe("Edge traffic");
 		expect(created.proxy.description).toBe("Edge traffic");
 	});
@@ -532,13 +570,14 @@ describe("agent vault proxies", () => {
 
 	it.each([[[]], [""]])("create leaves out empty allowed hosts when given %j", async (allowedHosts) => {
 		respondWith({ proxy: PROXY, proxyToken: "proxy-token" });
-		await agentVault.proxies.create({ name: "edge-proxy", allowedHosts });
+		await agentVault.proxies.create({ ...PROJECT, name: "edge-proxy", allowedHosts });
 		expect(lastRequest().body).not.toHaveProperty("allowedHosts");
 	});
 
 	it("create joins a list of allowed hosts into the comma-separated string the API takes", async () => {
 		respondWith({ proxy: PROXY, proxyToken: "proxy-token" });
 		await agentVault.proxies.create({
+			...PROJECT,
 			name: "edge-proxy",
 			trafficPolicy: AgentVaultTrafficPolicy.ServiceHosts,
 			allowedHosts: ["api.github.com", "*.slack.com"]
@@ -554,7 +593,7 @@ describe("agent vault traffic policy", () => {
 
 	it.each(hostsOnly)("create sends %s as bundle-hosts, which every Infisical version accepts", async (trafficPolicy) => {
 		respondWith({ proxy: PROXY, proxyToken: "proxy-token" });
-		await agentVault.proxies.create({ name: "edge-proxy", trafficPolicy });
+		await agentVault.proxies.create({ ...PROJECT, name: "edge-proxy", trafficPolicy });
 		expect(lastRequest().body.trafficPolicy).toBe("bundle-hosts");
 	});
 
@@ -566,7 +605,7 @@ describe("agent vault traffic policy", () => {
 
 	it("sends any-host as it is", async () => {
 		respondWith({ proxy: PROXY, proxyToken: "proxy-token" });
-		await agentVault.proxies.create({ name: "edge-proxy", trafficPolicy: AgentVaultTrafficPolicy.AnyHost });
+		await agentVault.proxies.create({ ...PROJECT, name: "edge-proxy", trafficPolicy: AgentVaultTrafficPolicy.AnyHost });
 		expect(lastRequest().body.trafficPolicy).toBe("any-host");
 		await agentVault.proxies.update(PROXY_ID, { trafficPolicy: "any-host" });
 		expect(lastRequest().body).toEqual({ trafficPolicy: "any-host" });
@@ -578,9 +617,9 @@ describe("agent vault traffic policy", () => {
 		const reported: unknown[] = [];
 
 		respondWith({ proxies: [proxy], totalCount: 1 });
-		reported.push((await agentVault.proxies.list()).proxies[0].trafficPolicy);
+		reported.push((await agentVault.proxies.list(PROJECT)).proxies[0].trafficPolicy);
 		respondWith({ proxy, proxyToken: "proxy-token" });
-		reported.push((await agentVault.proxies.create({ name: "edge-proxy" })).proxy.trafficPolicy);
+		reported.push((await agentVault.proxies.create({ ...PROJECT, name: "edge-proxy" })).proxy.trafficPolicy);
 		respondWith({ proxy });
 		reported.push((await agentVault.proxies.update(PROXY_ID, { pollInterval: 30 })).trafficPolicy);
 		respondWith({ proxy, proxyToken: "proxy-token" });
@@ -594,7 +633,7 @@ describe("agent vault traffic policy", () => {
 	it("leaves any-host, and a member's proxy without settings, as they are", async () => {
 		const { trafficPolicy, allowedHosts, pollInterval, createdAt, ...memberView } = PROXY;
 		respondWith({ proxies: [PROXY, memberView], totalCount: 2 });
-		const { proxies } = await agentVault.proxies.list();
+		const { proxies } = await agentVault.proxies.list(PROJECT);
 		expect(proxies).toEqual([PROXY, memberView]);
 	});
 });
@@ -602,22 +641,22 @@ describe("agent vault traffic policy", () => {
 describe("agent vault inline services", () => {
 	it("create sends services without an access bundle", async () => {
 		respondWith({ session: { ...CREATED_SESSION, accessBundle: null, services: [INLINE_SERVICE] } });
-		const created = await agentVault.sessions.create({ services: [INLINE_SERVICE_INPUT], ttl: "15m" });
-		expect(lastRequest().body).toEqual({ services: [INLINE_SERVICE_INPUT], ttl: "15m" });
+		const created = await agentVault.sessions.create({ ...PROJECT, services: [INLINE_SERVICE_INPUT], ttl: "15m" });
+		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, services: [INLINE_SERVICE_INPUT], ttl: "15m" });
 		expect(created.services).toEqual([INLINE_SERVICE]);
 		expect(created.accessBundle).toBeNull();
 	});
 
 	it("create sends an access bundle and services together", async () => {
 		respondWith({ session: { ...CREATED_SESSION, services: [INLINE_SERVICE] } });
-		await agentVault.sessions.create({ accessBundle: "release", services: [INLINE_SERVICE_INPUT] });
-		expect(lastRequest().body).toEqual({ accessBundle: "release", services: [INLINE_SERVICE_INPUT] });
+		await agentVault.sessions.create({ ...PROJECT, accessBundle: "release", services: [INLINE_SERVICE_INPUT] });
+		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, accessBundle: "release", services: [INLINE_SERVICE_INPUT] });
 	});
 
 	it("create sends an empty access bundle name, so the server rejects it instead of dropping it", async () => {
 		respondWith({ session: CREATED_SESSION });
-		await agentVault.sessions.create({ accessBundle: "" });
-		expect(lastRequest().body).toEqual({ accessBundle: "" });
+		await agentVault.sessions.create({ ...PROJECT, accessBundle: "" });
+		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, accessBundle: "" });
 	});
 
 	it("returns a session's services as the API sends them", async () => {
@@ -643,7 +682,7 @@ describe("agent vault inline services", () => {
 			},
 			422
 		);
-		await expect(agentVault.sessions.create({ services: [INLINE_SERVICE_INPUT] })).rejects.toThrow(
+		await expect(agentVault.sessions.create({ ...PROJECT, services: [INLINE_SERVICE_INPUT] })).rejects.toThrow(
 			/\[StatusCode=422\].*at most 20 services/
 		);
 	});
@@ -657,7 +696,7 @@ describe("agent vault inline services", () => {
 			},
 			403
 		);
-		await expect(agentVault.sessions.create({ services: [INLINE_SERVICE_INPUT] })).rejects.toThrow(
+		await expect(agentVault.sessions.create({ ...PROJECT, services: [INLINE_SERVICE_INPUT] })).rejects.toThrow(
 			/\[StatusCode=403\] Only an Agent Vault admin can send services with a session/
 		);
 	});
@@ -668,13 +707,13 @@ describe("agent vault inline services", () => {
 		const { services: createdServices, ...olderCreated } = CREATED_SESSION;
 
 		respondWith({ sessions: [olderSession], totalCount: 1 });
-		expect((await agentVault.sessions.list()).sessions[0].services).toEqual([]);
+		expect((await agentVault.sessions.list(PROJECT)).sessions[0].services).toEqual([]);
 		respondWith({ session: olderSession });
 		expect((await agentVault.sessions.get(SESSION_ID)).services).toEqual([]);
 		respondWith({ session: olderSession });
 		expect((await agentVault.sessions.update(SESSION_ID, { label: null })).services).toEqual([]);
 		respondWith({ session: olderCreated });
-		expect((await agentVault.sessions.create({ accessBundle: "release" })).services).toEqual([]);
+		expect((await agentVault.sessions.create({ ...PROJECT, accessBundle: "release" })).services).toEqual([]);
 	});
 });
 
@@ -689,8 +728,8 @@ describe("agent vault sessions", () => {
 
 	it("create sends one access bundle and reads it back", async () => {
 		respondWith({ session: CREATED_SESSION });
-		const created = await agentVault.sessions.create({ accessBundle: "release", ttl: "1h" });
-		expect(lastRequest().body).toEqual({ accessBundle: "release", ttl: "1h" });
+		const created = await agentVault.sessions.create({ ...PROJECT, accessBundle: "release", ttl: "1h" });
+		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, accessBundle: "release", ttl: "1h" });
 		expect(created.accessBundle).toEqual({ id: BUNDLE_ID, name: "release" });
 	});
 
@@ -703,8 +742,8 @@ describe("agent vault sessions", () => {
 
 	it("create leaves out ttl so the server picks the default", async () => {
 		respondWith({ session: CREATED_SESSION });
-		await agentVault.sessions.create({ accessBundle: "release" });
-		expect(lastRequest().body).toEqual({ accessBundle: "release" });
+		await agentVault.sessions.create({ ...PROJECT, accessBundle: "release" });
+		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, accessBundle: "release" });
 	});
 
 	it.each([
@@ -713,12 +752,13 @@ describe("agent vault sessions", () => {
 		{ name: "empty email", options: { onBehalfOfUserEmail: "" }, onBehalfOf: { userEmail: "" } }
 	])("create names the user it acts for by $name", async ({ options, onBehalfOf }) => {
 		respondWith({ session: CREATED_SESSION });
-		await agentVault.sessions.create({ accessBundle: "release", ...options });
-		expect(lastRequest().body).toEqual({ accessBundle: "release", onBehalfOf });
+		await agentVault.sessions.create({ ...PROJECT, accessBundle: "release", ...options });
+		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, accessBundle: "release", onBehalfOf });
 	});
 
 	it("create rejects both a user email and a user ID before sending a request", async () => {
 		const created = agentVault.sessions.create({
+			...PROJECT,
 			accessBundle: "release",
 			onBehalfOfUserEmail: USER_EMAIL,
 			onBehalfOfUserId: USER_ID
@@ -731,6 +771,7 @@ describe("agent vault sessions", () => {
 	it("list takes enum values or their strings, and joins the statuses", async () => {
 		respondWith({ sessions: [], totalCount: 0 });
 		await agentVault.sessions.list({
+			...PROJECT,
 			scope: AgentVaultSessionScope.All,
 			statuses: [AgentVaultSessionStatus.Active, "expired"]
 		});
@@ -741,20 +782,20 @@ describe("agent vault sessions", () => {
 describe("agent vault access bundles", () => {
 	it("list sends booleans the way the API reads them", async () => {
 		respondWith({ accessBundles: [], totalCount: 0 });
-		await agentVault.accessBundles.list({ requiresSetup: true, granted: false });
+		await agentVault.accessBundles.list({ ...PROJECT, requiresSetup: true, granted: false });
 		expect(lastRequest().query).toMatchObject({ requiresSetup: "true", granted: "false" });
 	});
 
 	it("list names the user a session would act for", async () => {
 		respondWith({ accessBundles: [], totalCount: 0 });
-		await agentVault.accessBundles.list({ onBehalfOfUserEmail: USER_EMAIL });
+		await agentVault.accessBundles.list({ ...PROJECT, onBehalfOfUserEmail: USER_EMAIL });
 		const { query } = lastRequest();
 		expect(query.onBehalfOfUserEmail).toBe(USER_EMAIL);
 		expect(query).not.toHaveProperty("onBehalfOfUserId");
 	});
 
 	it("list rejects both a user email and a user ID before sending a request", async () => {
-		const listed = agentVault.accessBundles.list({ onBehalfOfUserEmail: USER_EMAIL, onBehalfOfUserId: USER_ID });
+		const listed = agentVault.accessBundles.list({ ...PROJECT, onBehalfOfUserEmail: USER_EMAIL, onBehalfOfUserId: USER_ID });
 		await expect(listed).rejects.toThrow("not both");
 		expect(fetchSpy).not.toHaveBeenCalled();
 	});
@@ -789,6 +830,7 @@ describe("agent vault delegations", () => {
 	it("set puts the scope value", async () => {
 		respondWith({ delegation: DELEGATION_DETAIL });
 		await agentVault.delegations.set(MACHINE_IDENTITY_ID, {
+			...PROJECT,
 			scope: AgentVaultDelegationScope.Selected,
 			groupIds: [GROUP_ID]
 		});
@@ -797,20 +839,20 @@ describe("agent vault delegations", () => {
 
 	it("list joins the machine identity IDs", async () => {
 		respondWith({ delegations: [DELEGATION], totalCount: 1 });
-		await agentVault.delegations.list({ machineIdentityIds: [MACHINE_IDENTITY_ID, OTHER_MACHINE_IDENTITY_ID] });
+		await agentVault.delegations.list({ ...PROJECT, machineIdentityIds: [MACHINE_IDENTITY_ID, OTHER_MACHINE_IDENTITY_ID] });
 		expect(lastRequest().query.machineIdentityIds).toBe(`${MACHINE_IDENTITY_ID},${OTHER_MACHINE_IDENTITY_ID}`);
 	});
 
 	it("removeSubjects returns null once the last one is gone", async () => {
 		respondWith({ delegation: null });
-		const delegation = await agentVault.delegations.removeSubjects(MACHINE_IDENTITY_ID, { userIds: [USER_ID] });
+		const delegation = await agentVault.delegations.removeSubjects(MACHINE_IDENTITY_ID, { ...PROJECT, userIds: [USER_ID] });
 		expect(delegation).toBeNull();
 		expect(lastRequest().body).toEqual({ userIds: [USER_ID] });
 	});
 
 	it("listAvailableSubjects sends the actor type value", async () => {
 		respondWith({ members: [], totalCount: 0 });
-		await agentVault.delegations.listAvailableSubjects(MACHINE_IDENTITY_ID, { actorType: AgentVaultMemberType.Group });
+		await agentVault.delegations.listAvailableSubjects(MACHINE_IDENTITY_ID, { ...PROJECT, actorType: AgentVaultMemberType.Group });
 		expect(lastRequest().query.actorType).toBe("group");
 	});
 });
@@ -820,20 +862,20 @@ describe("agent vault retries", () => {
 	const timeoutError = () => new DOMException("The request timed out after 10 seconds", "TimeoutError");
 
 	it.each([
-		{ name: "proxies.create", call: (av: AgentVault) => av.proxies.create({ name: "edge-proxy" }) },
+		{ name: "proxies.create", call: (av: AgentVault) => av.proxies.create({ ...PROJECT, name: "edge-proxy" }) },
 		{ name: "proxies.rotateToken", call: (av: AgentVault) => av.proxies.rotateToken(PROXY_ID) },
-		{ name: "sessions.create", call: (av: AgentVault) => av.sessions.create({ accessBundle: "release" }) },
-		{ name: "accessBundles.create", call: (av: AgentVault) => av.accessBundles.create({ name: "release" }) },
+		{ name: "sessions.create", call: (av: AgentVault) => av.sessions.create({ ...PROJECT, accessBundle: "release" }) },
+		{ name: "accessBundles.create", call: (av: AgentVault) => av.accessBundles.create({ ...PROJECT, name: "release" }) },
 		// A retry after a lost response would report every grantee as skipped.
 		{ name: "accessBundles.grant", call: (av: AgentVault) => av.accessBundles.grant(BUNDLE_ID, { userIds: [USER_ID] }) },
 		{ name: "accessBundles.revoke", call: (av: AgentVault) => av.accessBundles.revoke(BUNDLE_ID, { userIds: [USER_ID] }) },
 		// A retry after a lost response would fail with a 404 for a delete that worked.
 		{ name: "proxies.delete", call: (av: AgentVault) => av.proxies.delete(PROXY_ID) },
 		{ name: "accessBundles.delete", call: (av: AgentVault) => av.accessBundles.delete(BUNDLE_ID) },
-		{ name: "delegations.delete", call: (av: AgentVault) => av.delegations.delete(MACHINE_IDENTITY_ID) },
+		{ name: "delegations.delete", call: (av: AgentVault) => av.delegations.delete(MACHINE_IDENTITY_ID, PROJECT) },
 		{
 			name: "delegations.removeSubjects",
-			call: (av: AgentVault) => av.delegations.removeSubjects(MACHINE_IDENTITY_ID, { userIds: [USER_ID] })
+			call: (av: AgentVault) => av.delegations.removeSubjects(MACHINE_IDENTITY_ID, { ...PROJECT, userIds: [USER_ID] })
 		}
 	])("$name isn't retried once the request may have reached the server", async ({ call }) => {
 		vi.useFakeTimers();
@@ -881,7 +923,7 @@ describe("agent vault IDs", () => {
 describe("agent vault errors", () => {
 	it("throws an InfisicalSDKRequestError, exported from the package root, with the status code", async () => {
 		respondWith({ statusCode: 404, message: "This machine identity has no delegation", error: "NotFound" }, 404);
-		const error = await agentVault.delegations.get(MACHINE_IDENTITY_ID).catch((err: unknown) => err);
+		const error = await agentVault.delegations.get(MACHINE_IDENTITY_ID, PROJECT).catch((err: unknown) => err);
 		expect(error).toBeInstanceOf(InfisicalSDKRequestError);
 		expect((error as InfisicalSDKRequestError).statusCode).toBe(404);
 		expect((error as Error).message).toMatch(/\[StatusCode=404\] This machine identity has no delegation$/);
@@ -895,7 +937,7 @@ describe("agent vault errors", () => {
 				new Promise((_resolve, reject) => init.signal!.addEventListener("abort", () => reject(init.signal!.reason)))
 		);
 
-		const error = agentVault.sessions.create({ accessBundle: "release" }).catch((err: unknown) => err);
+		const error = agentVault.sessions.create({ ...PROJECT, accessBundle: "release" }).catch((err: unknown) => err);
 		await vi.advanceTimersByTimeAsync(10_000);
 		const thrown = (await error) as InfisicalSDKError;
 
@@ -909,7 +951,7 @@ describe("agent vault errors", () => {
 		const reset = new TypeError("fetch failed", { cause: Object.assign(new Error("ECONNRESET"), { code: "ECONNRESET" }) });
 		fetchSpy.mockRejectedValue(reset);
 
-		const thrown = (await agentVault.sessions.create({ accessBundle: "release" }).catch((err: unknown) => err)) as Error;
+		const thrown = (await agentVault.sessions.create({ ...PROJECT, accessBundle: "release" }).catch((err: unknown) => err)) as Error;
 
 		expect(thrown).toBeInstanceOf(InfisicalSDKError);
 		expect(thrown.message).toBe("fetch failed");
@@ -932,7 +974,7 @@ describe("agent vault errors", () => {
 
 	it("throws an error the SDK raised itself as it is, without wrapping it", async () => {
 		const error = await agentVault.accessBundles
-			.list({ onBehalfOfUserEmail: USER_EMAIL, onBehalfOfUserId: USER_ID })
+			.list({ ...PROJECT, onBehalfOfUserEmail: USER_EMAIL, onBehalfOfUserId: USER_ID })
 			.catch((err: unknown) => err);
 		expect(error).toBeInstanceOf(InfisicalSDKError);
 		expect((error as Error).cause).toBeUndefined();

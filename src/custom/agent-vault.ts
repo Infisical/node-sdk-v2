@@ -83,7 +83,7 @@ export default class AgentVaultClient {
 		 * Lists the organization's Agent Vault proxies.
 		 * @returns The proxies and totalCount. A proxy's settings are only set for admins.
 		 */
-		list: (options: ListAgentVaultProxiesOptions = {}) =>
+		list: (options: ListAgentVaultProxiesOptions) =>
 			run(async () => {
 				const res = await this.apiClient.proxies.list({
 					projectId: options.projectId,
@@ -168,7 +168,7 @@ export default class AgentVaultClient {
 		 * Lists Agent Vault sessions.
 		 * @returns The sessions and totalCount.
 		 */
-		list: (options: ListAgentVaultSessionsOptions = {}) =>
+		list: (options: ListAgentVaultSessionsOptions) =>
 			run(async () => {
 				const res = await this.apiClient.sessions.list({
 					projectId: options.projectId,
@@ -261,7 +261,7 @@ export default class AgentVaultClient {
 		 * Lists the Agent Vault access bundles you can reach. Admins reach every access bundle.
 		 * @returns The access bundles and totalCount.
 		 */
-		list: (options: ListAgentVaultAccessBundlesOptions = {}) =>
+		list: (options: ListAgentVaultAccessBundlesOptions) =>
 			run(() => {
 				checkOneUser(options.onBehalfOfUserEmail, options.onBehalfOfUserId);
 
@@ -392,7 +392,7 @@ export default class AgentVaultClient {
 		 * Lists the machine identities that can create Agent Vault sessions on behalf of users.
 		 * @returns The delegations and totalCount. A listed delegation has no missingAccessBundles; call get for them.
 		 */
-		list: (options: ListAgentVaultDelegationsOptions = {}) =>
+		list: (options: ListAgentVaultDelegationsOptions) =>
 			run(() =>
 				this.apiClient.delegations.list({
 					projectId: options.projectId,
@@ -407,7 +407,7 @@ export default class AgentVaultClient {
 		 * delegation, throws an InfisicalSDKRequestError whose statusCode is 404.
 		 * @returns The delegation, with the access bundles the machine identity can't create sessions with.
 		 */
-		get: (machineIdentityId: string, options: AgentVaultProjectOptions = {}) =>
+		get: (machineIdentityId: string, options: AgentVaultProjectOptions) =>
 			run(async () => {
 				const res = await this.apiClient.delegations.get(machineIdentityId, { projectId: options.projectId });
 				return res.delegation;
@@ -434,7 +434,7 @@ export default class AgentVaultClient {
 		 * for good.
 		 * @returns The deleted delegation, without missingAccessBundles.
 		 */
-		delete: (machineIdentityId: string, options: AgentVaultProjectOptions = {}) =>
+		delete: (machineIdentityId: string, options: AgentVaultProjectOptions) =>
 			run(async () => {
 				const res = await this.apiClient.delegations.delete(machineIdentityId, { projectId: options.projectId });
 				return res.delegation;
@@ -477,7 +477,7 @@ export default class AgentVaultClient {
 		 * identity must be a member of Agent Vault.
 		 * @returns The users and groups in members, and totalCount.
 		 */
-		listAvailableSubjects: (machineIdentityId: string, options: ListAvailableAgentVaultDelegationSubjectsOptions = {}) =>
+		listAvailableSubjects: (machineIdentityId: string, options: ListAvailableAgentVaultDelegationSubjectsOptions) =>
 			run(() =>
 				this.apiClient.delegations.listAvailableSubjects(machineIdentityId, {
 					projectId: options.projectId,
