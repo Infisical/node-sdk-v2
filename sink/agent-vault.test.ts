@@ -413,6 +413,90 @@ describe("agent vault routes", () => {
 	});
 });
 
+// The ROUTES table above checks that a call without projectId leaves it out, so the server picks the project.
+describe("agent vault project", () => {
+	const PROJECT_ID = "4d6f8a0c-2e4b-4c6d-8f0a-1b3d5f7a9c2e";
+	const project = { projectId: PROJECT_ID };
+
+	it.each([
+		{ name: "proxies.list", call: (av: AgentVault) => av.proxies.list(project), response: { proxies: [], totalCount: 0 } },
+		{ name: "sessions.list", call: (av: AgentVault) => av.sessions.list(project), response: { sessions: [], totalCount: 0 } },
+		{
+			name: "accessBundles.list",
+			call: (av: AgentVault) => av.accessBundles.list(project),
+			response: { accessBundles: [], totalCount: 0 }
+		},
+		{
+			name: "delegations.list",
+			call: (av: AgentVault) => av.delegations.list(project),
+			response: { delegations: [], totalCount: 0 }
+		},
+		{
+			name: "delegations.get",
+			call: (av: AgentVault) => av.delegations.get(MACHINE_IDENTITY_ID, project),
+			response: { delegation: DELEGATION_DETAIL }
+		},
+		{
+			name: "delegations.set",
+			call: (av: AgentVault) => av.delegations.set(MACHINE_IDENTITY_ID, { ...project, scope: "all-members" }),
+			response: { delegation: DELEGATION_DETAIL },
+			body: { scope: "all-members" }
+		},
+		{
+			name: "delegations.delete",
+			call: (av: AgentVault) => av.delegations.delete(MACHINE_IDENTITY_ID, project),
+			response: { delegation: DELEGATION }
+		},
+		{
+			name: "delegations.addSubjects",
+			call: (av: AgentVault) => av.delegations.addSubjects(MACHINE_IDENTITY_ID, { ...project, userIds: [USER_ID] }),
+			response: { delegation: DELEGATION_DETAIL },
+			body: { userIds: [USER_ID] }
+		},
+		{
+			name: "delegations.removeSubjects",
+			call: (av: AgentVault) => av.delegations.removeSubjects(MACHINE_IDENTITY_ID, { ...project, userIds: [USER_ID] }),
+			response: { delegation: DELEGATION_DETAIL },
+			body: { userIds: [USER_ID] }
+		},
+		{
+			name: "delegations.listAvailableSubjects",
+			call: (av: AgentVault) => av.delegations.listAvailableSubjects(MACHINE_IDENTITY_ID, project),
+			response: { members: [], totalCount: 0 }
+		}
+	])("$name sends projectId in the query string", async ({ call, response, body }) => {
+		respondWith(response);
+		await call(agentVault);
+		const request = lastRequest();
+		expect(request.query.projectId).toBe(PROJECT_ID);
+		expect(request.body).toEqual(body);
+	});
+
+	it.each([
+		{
+			name: "proxies.create",
+			call: (av: AgentVault) => av.proxies.create({ ...project, name: "edge-proxy" }),
+			response: { proxy: PROXY, proxyToken: "proxy-token" }
+		},
+		{
+			name: "sessions.create",
+			call: (av: AgentVault) => av.sessions.create({ ...project, accessBundle: "release" }),
+			response: { session: CREATED_SESSION }
+		},
+		{
+			name: "accessBundles.create",
+			call: (av: AgentVault) => av.accessBundles.create({ ...project, name: "release" }),
+			response: { accessBundle: BUNDLE }
+		}
+	])("$name sends projectId in the body", async ({ call, response }) => {
+		respondWith(response);
+		await call(agentVault);
+		const request = lastRequest();
+		expect(request.body.projectId).toBe(PROJECT_ID);
+		expect(request.query).toEqual({});
+	});
+});
+
 describe("agent vault proxies", () => {
 	it.each([[[]], [""], ["  "]])("update sends null to remove every allowed host when given %j", async (allowedHosts) => {
 		respondWith({ proxy: PROXY });
