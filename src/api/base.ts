@@ -226,11 +226,13 @@ export class ApiClient {
 		}
 
 		const timeoutMs = config?.timeout ?? this.timeout;
+		let timer: ReturnType<typeof setTimeout> | undefined;
 
 		const doFetch = async (): Promise<Response> => {
+			clearTimeout(timer);
 			const controller = new AbortController();
 			// fetch rejects with the abort reason, so the error says the request timed out, and after how long.
-			const timer = setTimeout(
+			timer = setTimeout(
 				() =>
 					controller.abort(
 						new DOMException(`The request timed out after ${timeoutMs / 1000} seconds`, "TimeoutError")
@@ -244,24 +246,29 @@ export class ApiClient {
 					body,
 					signal: controller.signal,
 				});
-			} finally {
+			} catch (err) {
 				clearTimeout(timer);
+				throw err;
 			}
 		};
 
-		const response = await fetchWithRetry(doFetch, retryOptions);
+		try {
+			const response = await fetchWithRetry(doFetch, retryOptions);
 
-		if (!response.ok) {
-			throw new FetchHttpError(
-				`Request failed with status ${response.status}`,
-				{
-					data: await parseBody(response),
-					status: response.status,
-					config: { url: fullUrl, method },
-				}
-			);
+			if (!response.ok) {
+				throw new FetchHttpError(
+					`Request failed with status ${response.status}`,
+					{
+						data: await parseBody(response),
+						status: response.status,
+						config: { url: fullUrl, method },
+					}
+				);
+			}
+
+			return (await parseBody(response)) as T;
+		} finally {
+			clearTimeout(timer);
 		}
-
-		return (await parseBody(response)) as T;
 	}
 }
