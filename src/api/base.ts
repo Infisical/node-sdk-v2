@@ -1,5 +1,5 @@
 import { FetchHttpError } from "./fetch-errors";
-import { fetchWithRetry } from "./retry";
+import { FetchRetryOptions, fetchWithRetry, isConnectError } from "./retry";
 
 export type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE" | "PUT" | "OPTIONS" | "HEAD";
 
@@ -109,6 +109,28 @@ export class ApiClient {
 		});
 	}
 
+	/**
+	 * Makes a POST request that must not run twice, such as one that creates something. A network error is only
+	 * retried if the connection never opened, so a lost response can't make the server handle the request again.
+	 * A request that times out isn't retried, even if its connection stalled before opening, since both cases end
+	 * in the same TimeoutError. A rate-limited (429) response is still retried, since the server turned the request
+	 * away.
+	 */
+	public postOnce<T>(
+		url: string,
+		data?: unknown,
+		config?: RequestConfig
+	): Promise<T> {
+		const { body, headers } = this.serializeBody(data, config);
+		return this.request<T>(
+			"POST",
+			url,
+			body,
+			{ ...config, headers },
+			{ shouldRetryError: isConnectError }
+		);
+	}
+
 	public put<T>(
 		url: string,
 		data?: unknown,
@@ -139,6 +161,18 @@ export class ApiClient {
 			...config,
 			headers,
 		});
+	}
+
+	/** Makes a DELETE request that must not run twice. It's retried in the same cases as postOnce. */
+	public deleteOnce<T>(url: string, config?: RequestConfig): Promise<T> {
+		const { body, headers } = this.serializeBody(config?.data, config);
+		return this.request<T>(
+			"DELETE",
+			url,
+			body,
+			{ ...config, headers },
+			{ shouldRetryError: isConnectError }
+		);
 	}
 
 	private serializeBody(
@@ -181,7 +215,8 @@ export class ApiClient {
 		method: HttpMethod,
 		url: string,
 		body: string | undefined,
-		config?: RequestConfig
+		config?: RequestConfig,
+		retryOptions?: FetchRetryOptions
 	): Promise<T> {
 		const fullUrl = buildUrl(this.baseURL, url, config?.params);
 
@@ -196,7 +231,14 @@ export class ApiClient {
 		const doFetch = async (): Promise<Response> => {
 			clearTimeout(timer);
 			const controller = new AbortController();
-			timer = setTimeout(() => controller.abort(), timeoutMs);
+			// fetch rejects with the abort reason, so the error says the request timed out, and after how long.
+			timer = setTimeout(
+				() =>
+					controller.abort(
+						new DOMException(`The request timed out after ${timeoutMs / 1000} seconds`, "TimeoutError")
+					),
+				timeoutMs
+			);
 			try {
 				return await fetch(fullUrl, {
 					method,
@@ -211,7 +253,7 @@ export class ApiClient {
 		};
 
 		try {
-			const response = await fetchWithRetry(doFetch);
+			const response = await fetchWithRetry(doFetch, retryOptions);
 
 			if (!response.ok) {
 				throw new FetchHttpError(

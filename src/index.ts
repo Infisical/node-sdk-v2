@@ -14,6 +14,8 @@ import ProjectsClient from "./custom/projects";
 import FoldersClient from "./custom/folders";
 import { KmsApi } from "./api/endpoints/kms";
 import KmsClient from "./custom/kms";
+import { AgentVaultApi } from "./api/endpoints/agent-vault";
+import AgentVaultClient from "./custom/agent-vault";
 
 type InfisicalSDKOptions = {
 	siteUrl?: string;
@@ -30,6 +32,7 @@ class InfisicalSDK {
 	private projectsApi: ProjectsApi;
 	private foldersApi: FoldersApi;
 	private kmsApi: KmsApi;
+	private agentVaultApi: AgentVaultApi;
 
 	// Domain clients
 	private authClient: AuthClient;
@@ -39,6 +42,7 @@ class InfisicalSDK {
 	private projectsClient: ProjectsClient;
 	private foldersClient: FoldersClient;
 	private kmsClient: KmsClient;
+	private agentVaultClient: AgentVaultClient;
 
 	constructor(options?: InfisicalSDKOptions) {
 		const baseURL = options?.siteUrl || "https://app.infisical.com";
@@ -54,6 +58,7 @@ class InfisicalSDK {
 		this.projectsApi = new ProjectsApi(this.apiClient);
 		this.foldersApi = new FoldersApi(this.apiClient);
 		this.kmsApi = new KmsApi(this.apiClient);
+		this.agentVaultApi = new AgentVaultApi(this.apiClient);
 
 		// Initialize domain clients
 		this.authClient = new AuthClient(this.authenticate.bind(this), this.authApi);
@@ -63,6 +68,7 @@ class InfisicalSDK {
 		this.projectsClient = new ProjectsClient(this.projectsApi);
 		this.foldersClient = new FoldersClient(this.foldersApi);
 		this.kmsClient = new KmsClient(this.kmsApi);
+		this.agentVaultClient = new AgentVaultClient(this.agentVaultApi);
 	}
 
 	private authenticate(accessToken: string) {
@@ -83,12 +89,15 @@ class InfisicalSDK {
 	dynamicSecrets = () => this.dynamicSecretsClient;
 	auth = () => this.authClient;
 	kms = () => this.kmsClient;
+	agentVault = () => this.agentVaultClient;
 }
 
 // Export main SDK class
 export { InfisicalSDK };
 
 export * from "./api/types";
+
+export { InfisicalSDKError, InfisicalSDKRequestError } from "./custom/errors";
 
 // Export types and enums from schemas
 export { TDynamicSecretProvider, DynamicSecretProviders, SqlProviders } from "./custom/schemas";
