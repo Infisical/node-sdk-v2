@@ -249,7 +249,7 @@ const expectRejection = async (label: string, run: () => Promise<unknown>, patte
 			}
 		);
 		await step("sessions.get returns the inline services", () => adminVault.sessions.get(inline.id), (res) =>
-			res.services.length === 1 && res.services[0].hostPattern === "httpbin.org" && res.services[0].customHeaders[0]?.name === "X-Team"
+			res.services.length === 1 && res.services[0].type === "http" && res.services[0].hostPattern === "httpbin.org" && res.services[0].customHeaders[0]?.name === "X-Team"
 				? undefined
 				: `got ${JSON.stringify(res.services)}`
 		);

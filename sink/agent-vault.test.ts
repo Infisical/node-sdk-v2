@@ -1,6 +1,6 @@
 import { inspect } from "node:util";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { InfisicalSDK, InfisicalSDKError, InfisicalSDKRequestError } from "../src";
+import { AgentVaultInlineServiceInput, InfisicalSDK, InfisicalSDKError, InfisicalSDKRequestError } from "../src";
 import { FetchHttpError } from "../src/api/fetch-errors";
 import {
 	AgentVaultDelegationScope,
@@ -75,8 +75,6 @@ const INLINE_SERVICE = {
 	id: "8e2f4a6c-1b3d-4e5f-9a7b-2c4d6e8f0a1b",
 	name: "github",
 	type: "http",
-	serverUrl: null,
-	transport: null,
 	hostPattern: "api.github.com",
 	allowedMethods: ["GET"],
 	allowedPathPrefixes: null,
@@ -90,8 +88,6 @@ const SERVICE = {
 	accessBundleId: BUNDLE_ID,
 	name: "github",
 	type: "http",
-	serverUrl: null,
-	transport: null,
 	hostPattern: "api.github.com",
 	allowedMethods: null,
 	allowedPathPrefixes: null,
@@ -606,6 +602,59 @@ describe("agent vault traffic policy", () => {
 	});
 });
 
+describe("agent vault typed services", () => {
+	const { hostPattern, allowedMethods, allowedPathPrefixes, ...SERVICE_BASE } = SERVICE;
+	const POSTGRES_SERVICE = {
+		...SERVICE_BASE,
+		name: "orders-db",
+		type: "postgres",
+		host: "db.internal",
+		port: 5432,
+		database: "orders",
+		tls: { enabled: true, verify: true, ca: null },
+		credential: { type: "basic", memberProvidedFields: [] }
+	};
+	const SSH_SERVICE = {
+		...SERVICE_BASE,
+		id: "7d1e3f5a-9b2c-4d6e-8f0a-1b3c5d7e9f2a",
+		name: "bastion",
+		type: "ssh",
+		host: "bastion.internal",
+		port: 22,
+		credential: { type: "ssh-key", hasCertificate: false }
+	};
+	it("access bundle get reads a database and an SSH service by type", async () => {
+		respondWith({ accessBundle: { ...BUNDLE, services: [POSTGRES_SERVICE, SSH_SERVICE] } });
+		const { services } = await agentVault.accessBundles.get(BUNDLE_ID);
+		expect(services).toEqual([POSTGRES_SERVICE, SSH_SERVICE]);
+		const [database, server] = services;
+		if (database.type !== "postgres" || server.type !== "ssh") throw new Error("services were not narrowed");
+		expect(database.tls).toEqual({ enabled: true, verify: true, ca: null });
+		expect([database.host, database.port, database.database]).toEqual(["db.internal", 5432, "orders"]);
+		expect([server.host, server.port]).toEqual(["bastion.internal", 22]);
+	});
+
+	it("sessions read an inline database service by type", async () => {
+		const inline = {
+			id: INLINE_SERVICE.id,
+			name: "orders-db",
+			description: "Orders replica",
+			type: "mysql",
+			host: "db.internal",
+			port: 3306,
+			database: "orders",
+			tls: { enabled: false, verify: false, ca: null },
+			credential: { type: "basic" }
+		};
+		respondWith({ session: { ...SESSION, services: [inline] } });
+		const [service] = (await agentVault.sessions.get(SESSION_ID)).services;
+		expect(service).toEqual(inline);
+		if (service.type !== "mysql") throw new Error("service was not narrowed");
+		expect(service.database).toBe("orders");
+		expect(service.description).toBe("Orders replica");
+	});
+});
+
 describe("agent vault inline services", () => {
 	it("create sends services without an access bundle", async () => {
 		respondWith({ session: { ...CREATED_SESSION, accessBundle: null, services: [INLINE_SERVICE] } });
@@ -613,6 +662,29 @@ describe("agent vault inline services", () => {
 		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, services: [INLINE_SERVICE_INPUT], ttl: "15m" });
 		expect(created.services).toEqual([INLINE_SERVICE]);
 		expect(created.accessBundle).toBeNull();
+	});
+
+	it("create sends database and SSH services", async () => {
+		const services: AgentVaultInlineServiceInput[] = [
+			{
+				type: "postgres",
+				name: "orders-db",
+				description: "Orders replica",
+				host: "db.internal",
+				database: "orders",
+				tls: { verify: false },
+				credential: { type: "basic", username: "agent", password: "db-password" }
+			},
+			{
+				type: "ssh",
+				name: "bastion",
+				host: "bastion.internal",
+				credential: { type: "ssh-key", username: "deploy", privateKey: "ssh-private-key" }
+			}
+		];
+		respondWith({ session: { ...CREATED_SESSION, accessBundle: null } });
+		await agentVault.sessions.create({ ...PROJECT, services });
+		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, services });
 	});
 
 	it("create sends an access bundle and services together", async () => {

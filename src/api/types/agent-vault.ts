@@ -178,6 +178,8 @@ export interface AgentVaultInlineHttpServiceInput {
 	type: "http";
 	/** A name for the service, in lowercase letters, numbers and hyphens. Without one, the service goes by its first host. */
 	name?: string;
+	/** What the service is for, up to 256 characters. Agents in the session can read it, so never put a secret in it. */
+	description?: string;
 	/** The hosts the service covers, separated by commas, such as "api.github.com". A leading "*." matches exactly one label. */
 	hostPattern: string;
 	/** The HTTP methods the service allows. Defaults to every method. */
@@ -196,6 +198,8 @@ export interface AgentVaultInlineMcpServiceInput {
 	type: "mcp";
 	/** A name for the service, in lowercase letters, numbers and hyphens. Without one, the service goes by its host. */
 	name?: string;
+	/** What the service is for, up to 256 characters. Agents in the session can read it, so never put a secret in it. */
+	description?: string;
 	/** The MCP server's URL, such as "https://mcp.example.com/mcp". The service covers its host. */
 	serverUrl: string;
 	transport: AgentVaultMcpTransport;
@@ -204,26 +208,153 @@ export interface AgentVaultInlineMcpServiceInput {
 	customHeaders?: AgentVaultInlineCustomHeader[];
 }
 
-/** A service sent with a session: an HTTP API or an MCP server. */
-export type AgentVaultInlineServiceInput = AgentVaultInlineHttpServiceInput | AgentVaultInlineMcpServiceInput;
+/** How the proxy connects to a database. Each field defaults to true, and `ca` to the system's certificate authorities. */
+export interface AgentVaultInlineTlsInput {
+	enabled?: boolean;
+	/** Whether the proxy checks the database's certificate. */
+	verify?: boolean;
+	/** PEM certificate(s) of the authority that signed the database's certificate, used only while `verify` is on. */
+	ca?: string;
+}
 
-/** A service sent with a session, as Infisical returns it: without its token, password or values. */
-export interface AgentVaultInlineService {
-	id: string;
-	/** The name the service was sent with, or its first host if it was sent without one. */
+/** The account the proxy logs in to a database or SSH server as. */
+export interface AgentVaultInlineLoginCredential {
+	type: "basic";
+	username: string;
+	password?: string;
+}
+
+/** An SSH key the proxy logs in with, in OpenSSH or PEM format and without a passphrase. */
+export interface AgentVaultInlineSshKeyCredential {
+	type: "ssh-key";
+	username: string;
+	privateKey: string;
+	/** An SSH certificate for the key: the contents of its `-cert.pub` file. */
+	certificate?: string;
+}
+
+/** A PostgreSQL or MySQL database sent with a session. The agent reaches it with `infisical agent-vault connect`. */
+export interface AgentVaultInlineDatabaseServiceInput {
+	type: "postgres" | "mysql";
+	/** The name the agent connects with, in lowercase letters, numbers and hyphens, up to 63 characters. */
 	name: string;
-	type: "http" | "mcp";
-	serverUrl: string | null;
-	transport: AgentVaultMcpTransport | null;
+	/** What the service is for, up to 256 characters. Agents in the session can read it, so never put a secret in it. */
+	description?: string;
+	/** The database server's host name or IP address, as the proxy reaches it. No scheme, port or path. */
+	host: string;
+	/** Defaults to 5432 for postgres and 3306 for mysql. */
+	port?: number;
+	/** The database the proxy logs in to. */
+	database: string;
+	tls?: AgentVaultInlineTlsInput;
+	/** The account the proxy logs in as. */
+	credential: AgentVaultInlineLoginCredential;
+}
+
+/** An SSH server sent with a session. The agent reaches it with `infisical agent-vault connect`. */
+export interface AgentVaultInlineSshServiceInput {
+	type: "ssh";
+	/** The name the agent connects with, in lowercase letters, numbers and hyphens, up to 63 characters. */
+	name: string;
+	/** What the service is for, up to 256 characters. Agents in the session can read it, so never put a secret in it. */
+	description?: string;
+	/** The SSH server's host name or IP address, as the proxy reaches it. No scheme, port or path. */
+	host: string;
+	/** Defaults to 22. */
+	port?: number;
+	/** The user and password, or the user and SSH key, the proxy logs in with. */
+	credential: AgentVaultInlineLoginCredential | AgentVaultInlineSshKeyCredential;
+}
+
+/** A service sent with a session: an HTTP API, an MCP server, or a database or SSH server. */
+export type AgentVaultInlineServiceInput =
+	| AgentVaultInlineHttpServiceInput
+	| AgentVaultInlineMcpServiceInput
+	| AgentVaultInlineDatabaseServiceInput
+	| AgentVaultInlineSshServiceInput;
+
+/** The kinds of service Agent Vault serves. Each returns only its own fields. */
+export type AgentVaultServiceType = "http" | "mcp" | "postgres" | "mysql" | "ssh";
+
+/** How Agent Vault connects to a database service over TLS. */
+export interface AgentVaultServiceTls {
+	enabled: boolean;
+	/** Whether the server's certificate is checked. */
+	verify: boolean;
+	/** The CA certificate the server's certificate is checked against, or null for the system's. */
+	ca: string | null;
+}
+
+/** The fields every service sent with a session returns, whatever its type. */
+export interface AgentVaultInlineServiceBase {
+	id: string;
+	/** The name the service was sent with, or its host if it was sent without one. */
+	name: string;
+	/** What the service is for, or null if it was sent without a description. */
+	description?: string | null;
+	type: AgentVaultServiceType;
+}
+
+/** A bearer credential's settings, without its value. */
+export interface AgentVaultInlineBearerCredentialSummary {
+	type: "bearer";
+	headerName: string;
+	headerPrefix: string;
+}
+
+/** The names of the headers the proxy adds, without their values. */
+export type AgentVaultInlineCustomHeaderSummary = { name: string; prefix: string };
+
+/** An HTTP API sent with a session, as Infisical returns it. */
+export interface AgentVaultInlineHttpService extends AgentVaultInlineServiceBase {
+	type: "http";
 	hostPattern: string;
 	/** The HTTP methods the service allows, or null for every method. */
 	allowedMethods: AgentVaultHttpMethod[] | null;
 	/** The path prefixes the service allows, or null for every path. */
 	allowedPathPrefixes: string[] | null;
-	credential: { type: "bearer"; headerName: string; headerPrefix: string } | { type: "basic" } | { type: "passthrough" };
-	customHeaders: { name: string; prefix: string }[];
+	credential: AgentVaultInlineBearerCredentialSummary | { type: "basic" } | { type: "passthrough" };
+	customHeaders: AgentVaultInlineCustomHeaderSummary[];
 	substitutions: { placeholder: string; surfaces: AgentVaultSubstitutionSurface[] }[];
 }
+
+/** An MCP server sent with a session, as Infisical returns it. */
+export interface AgentVaultInlineMcpService extends AgentVaultInlineServiceBase {
+	type: "mcp";
+	serverUrl: string;
+	transport: AgentVaultMcpTransport;
+	hostPattern: string;
+	credential: AgentVaultInlineBearerCredentialSummary;
+	customHeaders: AgentVaultInlineCustomHeaderSummary[];
+}
+
+/** A Postgres or MySQL database sent with a session, as Infisical returns it. */
+export interface AgentVaultInlineDatabaseService extends AgentVaultInlineServiceBase {
+	type: "postgres" | "mysql";
+	host: string;
+	port: number;
+	database: string;
+	tls: AgentVaultServiceTls;
+	credential: { type: "basic" };
+}
+
+/** An SSH server sent with a session, as Infisical returns it. */
+export interface AgentVaultInlineSshService extends AgentVaultInlineServiceBase {
+	type: "ssh";
+	host: string;
+	port: number;
+	credential: { type: "basic" } | { type: "ssh-key"; hasCertificate: boolean };
+}
+
+/**
+ * A service sent with a session, as Infisical returns it: without its token, password or values. Narrow on
+ * `type` to read the fields that type has.
+ */
+export type AgentVaultInlineService =
+	| AgentVaultInlineHttpService
+	| AgentVaultInlineMcpService
+	| AgentVaultInlineDatabaseService
+	| AgentVaultInlineSshService;
 
 export interface AgentVaultSession {
 	id: string;
@@ -313,25 +444,17 @@ export interface AgentVaultAccessBundleSummary extends AgentVaultAccessBundle {
 }
 
 /**
- * A service in an Agent Vault access bundle. The SDK doesn't manage services, so a service's nested
- * settings, such as its credential, are left as the API returns them.
+ * The fields every service in an Agent Vault access bundle returns, whatever its type. The SDK doesn't manage
+ * services, so a service's nested settings, such as its credential, are left as the API returns them.
  */
-export interface AgentVaultService {
+export interface AgentVaultServiceBase {
 	id: string;
 	accessBundleId: string;
 	name: string;
-	/** The kind of service, such as "http" or "mcp". */
-	type: string;
-	serverUrl: string | null;
-	transport: string | null;
-	hostPattern: string;
-	allowedMethods: string[] | null;
-	allowedPathPrefixes: string[] | null;
-	/** The MCP tools that agents can call through the service, by exact name, or null for every tool. */
-	allowedTools?: string[] | null;
+	/** What the service is for, or null if it has no description. */
+	description?: string | null;
+	type: AgentVaultServiceType;
 	credential: Record<string, unknown>;
-	customHeaders: Record<string, unknown>[];
-	substitutions: Record<string, unknown>[];
 	/** Only set for admins. */
 	variableReferences?: Record<string, unknown>[];
 	/** Your own values for the service, or null when the admin sets the whole credential. */
@@ -339,6 +462,48 @@ export interface AgentVaultService {
 	createdAt: string;
 	updatedAt: string;
 }
+
+/** An HTTP API in an Agent Vault access bundle. */
+export interface AgentVaultHttpService extends AgentVaultServiceBase {
+	type: "http";
+	hostPattern: string;
+	/** The HTTP methods the service allows, or null for every method. */
+	allowedMethods: string[] | null;
+	/** The path prefixes the service allows, or null for every path. */
+	allowedPathPrefixes: string[] | null;
+	customHeaders: Record<string, unknown>[];
+	substitutions: Record<string, unknown>[];
+}
+
+/** An MCP server in an Agent Vault access bundle. */
+export interface AgentVaultMcpService extends AgentVaultServiceBase {
+	type: "mcp";
+	serverUrl: string;
+	transport: string;
+	hostPattern: string;
+	customHeaders: Record<string, unknown>[];
+	/** The MCP tools that agents can call through the service, by exact name, or null for every tool. */
+	allowedTools?: string[] | null;
+}
+
+/** A Postgres or MySQL database in an Agent Vault access bundle. */
+export interface AgentVaultDatabaseService extends AgentVaultServiceBase {
+	type: "postgres" | "mysql";
+	host: string;
+	port: number;
+	database: string;
+	tls: AgentVaultServiceTls;
+}
+
+/** An SSH server in an Agent Vault access bundle. */
+export interface AgentVaultSshService extends AgentVaultServiceBase {
+	type: "ssh";
+	host: string;
+	port: number;
+}
+
+/** A service in an Agent Vault access bundle. Narrow on `type` to read the fields that type has. */
+export type AgentVaultService = AgentVaultHttpService | AgentVaultMcpService | AgentVaultDatabaseService | AgentVaultSshService;
 
 /** An Agent Vault access bundle with its services. */
 export interface AgentVaultAccessBundleWithServices extends AgentVaultAccessBundle {
@@ -707,9 +872,10 @@ export type CreateAgentVaultSessionOptions = {
 	accessBundle?: string;
 	/**
 	 * Services the session carries itself, instead of or beside its access bundle's: up to 20. Only Agent Vault admins
-	 * can send them. Each has the same fields as a service in an access bundle, except that its name is optional, its
-	 * values can't use variables, it can't use OAuth or member-provided values, and an MCP server can't be limited to
-	 * some of its tools. To limit an MCP server's tools, add it to an access bundle instead.
+	 * can send them. Each has the same fields as a service in an access bundle, except that its name is optional for
+	 * HTTP and MCP services (database and SSH services need one), its values can't use variables, it can't use OAuth
+	 * or member-provided values, and an MCP server can't be limited to some of its tools. To limit an MCP server's
+	 * tools, add it to an access bundle instead.
 	 */
 	services?: AgentVaultInlineServiceInput[];
 	/** How long the session lasts: a duration such as "30m", "8h" or "7d" (at least 1m), or "never". Defaults to "7d", or to "1h" for a session on behalf of a user. */
