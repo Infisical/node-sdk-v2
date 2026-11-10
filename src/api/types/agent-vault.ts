@@ -286,14 +286,17 @@ export interface AgentVaultInlineServiceBase {
 	/** What the service is for, or null if it was sent without a description. */
 	description?: string | null;
 	type: AgentVaultServiceType;
-	credential:
-		| { type: "bearer"; headerName: string; headerPrefix: string }
-		| { type: "basic" }
-		| { type: "passthrough" }
-		| { type: "ssh-key"; hasCertificate: boolean };
-	customHeaders: { name: string; prefix: string }[];
-	substitutions: { placeholder: string; surfaces: AgentVaultSubstitutionSurface[] }[];
 }
+
+/** A bearer credential's settings, without its value. */
+export interface AgentVaultInlineBearerCredentialSummary {
+	type: "bearer";
+	headerName: string;
+	headerPrefix: string;
+}
+
+/** The names of the headers the proxy adds, without their values. */
+export type AgentVaultInlineCustomHeaderSummary = { name: string; prefix: string };
 
 /** An HTTP API sent with a session, as Infisical returns it. */
 export interface AgentVaultInlineHttpService extends AgentVaultInlineServiceBase {
@@ -303,6 +306,9 @@ export interface AgentVaultInlineHttpService extends AgentVaultInlineServiceBase
 	allowedMethods: AgentVaultHttpMethod[] | null;
 	/** The path prefixes the service allows, or null for every path. */
 	allowedPathPrefixes: string[] | null;
+	credential: AgentVaultInlineBearerCredentialSummary | { type: "basic" } | { type: "passthrough" };
+	customHeaders: AgentVaultInlineCustomHeaderSummary[];
+	substitutions: { placeholder: string; surfaces: AgentVaultSubstitutionSurface[] }[];
 }
 
 /** An MCP server sent with a session, as Infisical returns it. */
@@ -311,6 +317,8 @@ export interface AgentVaultInlineMcpService extends AgentVaultInlineServiceBase 
 	serverUrl: string;
 	transport: AgentVaultMcpTransport;
 	hostPattern: string;
+	credential: AgentVaultInlineBearerCredentialSummary;
+	customHeaders: AgentVaultInlineCustomHeaderSummary[];
 }
 
 /** A Postgres or MySQL database sent with a session, as Infisical returns it. */
@@ -320,6 +328,7 @@ export interface AgentVaultInlineDatabaseService extends AgentVaultInlineService
 	port: number;
 	database: string;
 	tls: AgentVaultServiceTls;
+	credential: { type: "basic" };
 }
 
 /** An SSH server sent with a session, as Infisical returns it. */
@@ -327,6 +336,7 @@ export interface AgentVaultInlineSshService extends AgentVaultInlineServiceBase 
 	type: "ssh";
 	host: string;
 	port: number;
+	credential: { type: "basic" } | { type: "ssh-key"; hasCertificate: boolean };
 }
 
 /**
@@ -438,8 +448,6 @@ export interface AgentVaultServiceBase {
 	description?: string | null;
 	type: AgentVaultServiceType;
 	credential: Record<string, unknown>;
-	customHeaders: Record<string, unknown>[];
-	substitutions: Record<string, unknown>[];
 	/** Only set for admins. */
 	variableReferences?: Record<string, unknown>[];
 	/** Your own values for the service, or null when the admin sets the whole credential. */
@@ -456,6 +464,8 @@ export interface AgentVaultHttpService extends AgentVaultServiceBase {
 	allowedMethods: string[] | null;
 	/** The path prefixes the service allows, or null for every path. */
 	allowedPathPrefixes: string[] | null;
+	customHeaders: Record<string, unknown>[];
+	substitutions: Record<string, unknown>[];
 }
 
 /** An MCP server in an Agent Vault access bundle. */
@@ -464,6 +474,7 @@ export interface AgentVaultMcpService extends AgentVaultServiceBase {
 	serverUrl: string;
 	transport: string;
 	hostPattern: string;
+	customHeaders: Record<string, unknown>[];
 	/** The MCP tools that agents can call through the service, by exact name, or null for every tool. */
 	allowedTools?: string[] | null;
 }

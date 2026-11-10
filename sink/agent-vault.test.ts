@@ -644,9 +644,7 @@ describe("agent vault typed services", () => {
 			port: 3306,
 			database: "orders",
 			tls: { enabled: false, verify: false, ca: null },
-			credential: { type: "basic" },
-			customHeaders: [],
-			substitutions: []
+			credential: { type: "basic" }
 		};
 		respondWith({ session: { ...SESSION, services: [inline] } });
 		const [service] = (await agentVault.sessions.get(SESSION_ID)).services;
