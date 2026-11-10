@@ -178,6 +178,8 @@ export interface AgentVaultInlineHttpServiceInput {
 	type: "http";
 	/** A name for the service, in lowercase letters, numbers and hyphens. Without one, the service goes by its first host. */
 	name?: string;
+	/** What the service is for, up to 256 characters. Agents in the session can read it, so never put a secret in it. */
+	description?: string;
 	/** The hosts the service covers, separated by commas, such as "api.github.com". A leading "*." matches exactly one label. */
 	hostPattern: string;
 	/** The HTTP methods the service allows. Defaults to every method. */
@@ -196,6 +198,8 @@ export interface AgentVaultInlineMcpServiceInput {
 	type: "mcp";
 	/** A name for the service, in lowercase letters, numbers and hyphens. Without one, the service goes by its host. */
 	name?: string;
+	/** What the service is for, up to 256 characters. Agents in the session can read it, so never put a secret in it. */
+	description?: string;
 	/** The MCP server's URL, such as "https://mcp.example.com/mcp". The service covers its host. */
 	serverUrl: string;
 	transport: AgentVaultMcpTransport;
@@ -204,8 +208,63 @@ export interface AgentVaultInlineMcpServiceInput {
 	customHeaders?: AgentVaultInlineCustomHeader[];
 }
 
-/** A service sent with a session: an HTTP API or an MCP server. */
-export type AgentVaultInlineServiceInput = AgentVaultInlineHttpServiceInput | AgentVaultInlineMcpServiceInput;
+/** How the proxy connects to a database. Each field defaults to true, and `ca` to the system's certificate authorities. */
+export interface AgentVaultInlineTlsInput {
+	enabled?: boolean;
+	/** Whether the proxy checks the database's certificate. */
+	verify?: boolean;
+	/** PEM certificate(s) of the authority that signed the database's certificate, used only while `verify` is on. */
+	ca?: string;
+}
+
+/** An SSH key the proxy logs in with, in OpenSSH or PEM format and without a passphrase. */
+export interface AgentVaultInlineSshKeyCredential {
+	type: "ssh-key";
+	username: string;
+	privateKey: string;
+	/** An SSH certificate for the key: the contents of its `-cert.pub` file. */
+	certificate?: string;
+}
+
+/** A PostgreSQL or MySQL database sent with a session. The agent reaches it with `infisical agent-vault connect`. */
+export interface AgentVaultInlineDatabaseServiceInput {
+	type: "postgres" | "mysql";
+	/** The name the agent connects with, in lowercase letters, numbers and hyphens, up to 63 characters. */
+	name: string;
+	/** What the service is for, up to 256 characters. Agents in the session can read it, so never put a secret in it. */
+	description?: string;
+	/** The database server's host name or IP address, as the proxy reaches it. No scheme, port or path. */
+	host: string;
+	/** Defaults to 5432 for postgres and 3306 for mysql. */
+	port?: number;
+	/** The database the proxy logs in to. */
+	database: string;
+	tls?: AgentVaultInlineTlsInput;
+	/** The account the proxy logs in as. */
+	credential: AgentVaultInlineBasicCredential;
+}
+
+/** An SSH server sent with a session. The agent reaches it with `infisical agent-vault connect`. */
+export interface AgentVaultInlineSshServiceInput {
+	type: "ssh";
+	/** The name the agent connects with, in lowercase letters, numbers and hyphens, up to 63 characters. */
+	name: string;
+	/** What the service is for, up to 256 characters. Agents in the session can read it, so never put a secret in it. */
+	description?: string;
+	/** The SSH server's host name or IP address, as the proxy reaches it. No scheme, port or path. */
+	host: string;
+	/** Defaults to 22. */
+	port?: number;
+	/** The user and password, or the user and SSH key, the proxy logs in with. */
+	credential: AgentVaultInlineBasicCredential | AgentVaultInlineSshKeyCredential;
+}
+
+/** A service sent with a session: an HTTP API, an MCP server, or a database or SSH server. */
+export type AgentVaultInlineServiceInput =
+	| AgentVaultInlineHttpServiceInput
+	| AgentVaultInlineMcpServiceInput
+	| AgentVaultInlineDatabaseServiceInput
+	| AgentVaultInlineSshServiceInput;
 
 /** The kinds of service Agent Vault serves. Each returns only its own fields. */
 export type AgentVaultServiceType = "http" | "mcp" | "postgres" | "mysql" | "ssh";

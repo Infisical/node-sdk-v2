@@ -1,6 +1,6 @@
 import { inspect } from "node:util";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { InfisicalSDK, InfisicalSDKError, InfisicalSDKRequestError } from "../src";
+import { AgentVaultInlineServiceInput, InfisicalSDK, InfisicalSDKError, InfisicalSDKRequestError } from "../src";
 import { FetchHttpError } from "../src/api/fetch-errors";
 import {
 	AgentVaultDelegationScope,
@@ -664,6 +664,29 @@ describe("agent vault inline services", () => {
 		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, services: [INLINE_SERVICE_INPUT], ttl: "15m" });
 		expect(created.services).toEqual([INLINE_SERVICE]);
 		expect(created.accessBundle).toBeNull();
+	});
+
+	it("create sends database and SSH services", async () => {
+		const services: AgentVaultInlineServiceInput[] = [
+			{
+				type: "postgres",
+				name: "orders-db",
+				description: "Orders replica",
+				host: "db.internal",
+				database: "orders",
+				tls: { verify: false },
+				credential: { type: "basic", username: "agent", password: "db-password" }
+			},
+			{
+				type: "ssh",
+				name: "bastion",
+				host: "bastion.internal",
+				credential: { type: "ssh-key", username: "deploy", privateKey: "ssh-private-key" }
+			}
+		];
+		respondWith({ session: { ...CREATED_SESSION, accessBundle: null } });
+		await agentVault.sessions.create({ ...PROJECT, services });
+		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, services });
 	});
 
 	it("create sends an access bundle and services together", async () => {
