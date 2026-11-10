@@ -207,23 +207,78 @@ export interface AgentVaultInlineMcpServiceInput {
 /** A service sent with a session: an HTTP API or an MCP server. */
 export type AgentVaultInlineServiceInput = AgentVaultInlineHttpServiceInput | AgentVaultInlineMcpServiceInput;
 
-/** A service sent with a session, as Infisical returns it: without its token, password or values. */
-export interface AgentVaultInlineService {
+/** The kinds of service Agent Vault serves. Each returns only its own fields. */
+export type AgentVaultServiceType = "http" | "mcp" | "postgres" | "mysql" | "ssh";
+
+/** How Agent Vault connects to a database service over TLS. */
+export interface AgentVaultServiceTls {
+	enabled: boolean;
+	/** Whether the server's certificate is checked. */
+	verify: boolean;
+	/** The CA certificate the server's certificate is checked against, or null for the system's. */
+	ca: string | null;
+}
+
+/** The fields every service sent with a session returns, whatever its type. */
+export interface AgentVaultInlineServiceBase {
 	id: string;
-	/** The name the service was sent with, or its first host if it was sent without one. */
+	/** The name the service was sent with, or its host if it was sent without one. */
 	name: string;
-	type: "http" | "mcp";
-	serverUrl: string | null;
-	transport: AgentVaultMcpTransport | null;
+	/** What the service is for, or null if it was sent without a description. */
+	description?: string | null;
+	type: AgentVaultServiceType;
+	credential:
+		| { type: "bearer"; headerName: string; headerPrefix: string }
+		| { type: "basic" }
+		| { type: "passthrough" }
+		| { type: "ssh-key"; hasCertificate: boolean };
+	customHeaders: { name: string; prefix: string }[];
+	substitutions: { placeholder: string; surfaces: AgentVaultSubstitutionSurface[] }[];
+}
+
+/** An HTTP API sent with a session, as Infisical returns it. */
+export interface AgentVaultInlineHttpService extends AgentVaultInlineServiceBase {
+	type: "http";
 	hostPattern: string;
 	/** The HTTP methods the service allows, or null for every method. */
 	allowedMethods: AgentVaultHttpMethod[] | null;
 	/** The path prefixes the service allows, or null for every path. */
 	allowedPathPrefixes: string[] | null;
-	credential: { type: "bearer"; headerName: string; headerPrefix: string } | { type: "basic" } | { type: "passthrough" };
-	customHeaders: { name: string; prefix: string }[];
-	substitutions: { placeholder: string; surfaces: AgentVaultSubstitutionSurface[] }[];
 }
+
+/** An MCP server sent with a session, as Infisical returns it. */
+export interface AgentVaultInlineMcpService extends AgentVaultInlineServiceBase {
+	type: "mcp";
+	serverUrl: string;
+	transport: AgentVaultMcpTransport;
+	hostPattern: string;
+}
+
+/** A Postgres or MySQL database sent with a session, as Infisical returns it. */
+export interface AgentVaultInlineDatabaseService extends AgentVaultInlineServiceBase {
+	type: "postgres" | "mysql";
+	host: string;
+	port: number;
+	database: string;
+	tls: AgentVaultServiceTls;
+}
+
+/** An SSH server sent with a session, as Infisical returns it. */
+export interface AgentVaultInlineSshService extends AgentVaultInlineServiceBase {
+	type: "ssh";
+	host: string;
+	port: number;
+}
+
+/**
+ * A service sent with a session, as Infisical returns it: without its token, password or values. Narrow on
+ * `type` to read the fields that type has.
+ */
+export type AgentVaultInlineService =
+	| AgentVaultInlineHttpService
+	| AgentVaultInlineMcpService
+	| AgentVaultInlineDatabaseService
+	| AgentVaultInlineSshService;
 
 export interface AgentVaultSession {
 	id: string;
@@ -313,22 +368,16 @@ export interface AgentVaultAccessBundleSummary extends AgentVaultAccessBundle {
 }
 
 /**
- * A service in an Agent Vault access bundle. The SDK doesn't manage services, so a service's nested
- * settings, such as its credential, are left as the API returns them.
+ * The fields every service in an Agent Vault access bundle returns, whatever its type. The SDK doesn't manage
+ * services, so a service's nested settings, such as its credential, are left as the API returns them.
  */
-export interface AgentVaultService {
+export interface AgentVaultServiceBase {
 	id: string;
 	accessBundleId: string;
 	name: string;
-	/** The kind of service, such as "http" or "mcp". */
-	type: string;
-	serverUrl: string | null;
-	transport: string | null;
-	hostPattern: string;
-	allowedMethods: string[] | null;
-	allowedPathPrefixes: string[] | null;
-	/** The MCP tools that agents can call through the service, by exact name, or null for every tool. */
-	allowedTools?: string[] | null;
+	/** What the service is for, or null if it has no description. */
+	description?: string | null;
+	type: AgentVaultServiceType;
 	credential: Record<string, unknown>;
 	customHeaders: Record<string, unknown>[];
 	substitutions: Record<string, unknown>[];
@@ -339,6 +388,45 @@ export interface AgentVaultService {
 	createdAt: string;
 	updatedAt: string;
 }
+
+/** An HTTP API in an Agent Vault access bundle. */
+export interface AgentVaultHttpService extends AgentVaultServiceBase {
+	type: "http";
+	hostPattern: string;
+	/** The HTTP methods the service allows, or null for every method. */
+	allowedMethods: string[] | null;
+	/** The path prefixes the service allows, or null for every path. */
+	allowedPathPrefixes: string[] | null;
+}
+
+/** An MCP server in an Agent Vault access bundle. */
+export interface AgentVaultMcpService extends AgentVaultServiceBase {
+	type: "mcp";
+	serverUrl: string;
+	transport: string;
+	hostPattern: string;
+	/** The MCP tools that agents can call through the service, by exact name, or null for every tool. */
+	allowedTools?: string[] | null;
+}
+
+/** A Postgres or MySQL database in an Agent Vault access bundle. */
+export interface AgentVaultDatabaseService extends AgentVaultServiceBase {
+	type: "postgres" | "mysql";
+	host: string;
+	port: number;
+	database: string;
+	tls: AgentVaultServiceTls;
+}
+
+/** An SSH server in an Agent Vault access bundle. */
+export interface AgentVaultSshService extends AgentVaultServiceBase {
+	type: "ssh";
+	host: string;
+	port: number;
+}
+
+/** A service in an Agent Vault access bundle. Narrow on `type` to read the fields that type has. */
+export type AgentVaultService = AgentVaultHttpService | AgentVaultMcpService | AgentVaultDatabaseService | AgentVaultSshService;
 
 /** An Agent Vault access bundle with its services. */
 export interface AgentVaultAccessBundleWithServices extends AgentVaultAccessBundle {
