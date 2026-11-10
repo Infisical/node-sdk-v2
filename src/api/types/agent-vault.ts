@@ -217,6 +217,13 @@ export interface AgentVaultInlineTlsInput {
 	ca?: string;
 }
 
+/** The account the proxy logs in to a database or SSH server as. */
+export interface AgentVaultInlineLoginCredential {
+	type: "basic";
+	username: string;
+	password?: string;
+}
+
 /** An SSH key the proxy logs in with, in OpenSSH or PEM format and without a passphrase. */
 export interface AgentVaultInlineSshKeyCredential {
 	type: "ssh-key";
@@ -241,7 +248,7 @@ export interface AgentVaultInlineDatabaseServiceInput {
 	database: string;
 	tls?: AgentVaultInlineTlsInput;
 	/** The account the proxy logs in as. */
-	credential: AgentVaultInlineBasicCredential;
+	credential: AgentVaultInlineLoginCredential;
 }
 
 /** An SSH server sent with a session. The agent reaches it with `infisical agent-vault connect`. */
@@ -256,7 +263,7 @@ export interface AgentVaultInlineSshServiceInput {
 	/** Defaults to 22. */
 	port?: number;
 	/** The user and password, or the user and SSH key, the proxy logs in with. */
-	credential: AgentVaultInlineBasicCredential | AgentVaultInlineSshKeyCredential;
+	credential: AgentVaultInlineLoginCredential | AgentVaultInlineSshKeyCredential;
 }
 
 /** A service sent with a session: an HTTP API, an MCP server, or a database or SSH server. */
@@ -865,9 +872,10 @@ export type CreateAgentVaultSessionOptions = {
 	accessBundle?: string;
 	/**
 	 * Services the session carries itself, instead of or beside its access bundle's: up to 20. Only Agent Vault admins
-	 * can send them. Each has the same fields as a service in an access bundle, except that its name is optional, its
-	 * values can't use variables, it can't use OAuth or member-provided values, and an MCP server can't be limited to
-	 * some of its tools. To limit an MCP server's tools, add it to an access bundle instead.
+	 * can send them. Each has the same fields as a service in an access bundle, except that its name is optional for
+	 * HTTP and MCP services (database and SSH services need one), its values can't use variables, it can't use OAuth
+	 * or member-provided values, and an MCP server can't be limited to some of its tools. To limit an MCP server's
+	 * tools, add it to an access bundle instead.
 	 */
 	services?: AgentVaultInlineServiceInput[];
 	/** How long the session lasts: a duration such as "30m", "8h" or "7d" (at least 1m), or "never". Defaults to "7d", or to "1h" for a session on behalf of a user. */
