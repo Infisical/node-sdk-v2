@@ -85,7 +85,6 @@ const INLINE_SERVICE = {
 const BUNDLE = { id: BUNDLE_ID, name: "release", description: null, createdAt: CREATED_AT, updatedAt: CREATED_AT };
 const SERVICE = {
 	id: SERVICE_ID,
-	accessBundleId: BUNDLE_ID,
 	name: "github",
 	type: "http",
 	hostPattern: "api.github.com",

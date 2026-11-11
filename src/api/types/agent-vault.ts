@@ -449,7 +449,6 @@ export interface AgentVaultAccessBundleSummary extends AgentVaultAccessBundle {
  */
 export interface AgentVaultServiceBase {
 	id: string;
-	accessBundleId: string;
 	name: string;
 	/** What the service is for, or null if it has no description. */
 	description?: string | null;
