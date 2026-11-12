@@ -39,7 +39,6 @@
   "description": "The Infisical SDK provides a convenient way to programmatically interact with the Infisical API.",
   "devDependencies": {
     "@types/node": "^22.5.1",
-    "tsc": "^2.0.4",
     "tsup": "^8.2.4",
     "vitest": "^2.1.9"
   },
