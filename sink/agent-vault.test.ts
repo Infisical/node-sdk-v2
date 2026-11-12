@@ -686,6 +686,37 @@ describe("agent vault inline services", () => {
 		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, services });
 	});
 
+	it("create sends an MCP server's tool list and reads it back", async () => {
+		const services: AgentVaultInlineServiceInput[] = [
+			{
+				type: "mcp",
+				name: "deepwiki",
+				serverUrl: "https://mcp.deepwiki.com/mcp",
+				transport: "streamable-http",
+				credential: { type: "bearer", value: "mcp-token" },
+				allowedTools: ["read_wiki_structure"]
+			}
+		];
+		const inline = {
+			id: INLINE_SERVICE.id,
+			name: "deepwiki",
+			description: null,
+			type: "mcp",
+			serverUrl: "https://mcp.deepwiki.com/mcp",
+			transport: "streamable-http",
+			hostPattern: "mcp.deepwiki.com",
+			allowedTools: ["read_wiki_structure"],
+			credential: { type: "bearer", headerName: "Authorization", headerPrefix: "Bearer" },
+			customHeaders: []
+		};
+		respondWith({ session: { ...CREATED_SESSION, accessBundle: null, services: [inline] } });
+		const created = await agentVault.sessions.create({ ...PROJECT, services });
+		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, services });
+		const [service] = created.services;
+		if (service.type !== "mcp") throw new Error("service was not narrowed");
+		expect(service.allowedTools).toEqual(["read_wiki_structure"]);
+	});
+
 	it("create sends an access bundle and services together", async () => {
 		respondWith({ session: { ...CREATED_SESSION, services: [INLINE_SERVICE] } });
 		await agentVault.sessions.create({ ...PROJECT, accessBundle: "release", services: [INLINE_SERVICE_INPUT] });
