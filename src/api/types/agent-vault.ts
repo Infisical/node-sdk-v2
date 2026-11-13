@@ -205,9 +205,9 @@ export interface AgentVaultInlineMcpServiceInput {
 	transport: AgentVaultMcpTransport;
 	credential: AgentVaultInlineBearerCredential;
 	/**
-	 * The MCP tools that agents can call through the service, by exact, case-sensitive name: 1 to 100 names, each 1 to
-	 * 128 letters, numbers, underscores, hyphens or dots. The proxy refuses a call to any other tool and leaves it out
-	 * of the server's tool list. Leave it out, or send null, to allow every tool. Needs an Infisical version that
+	 * The MCP tools that agents can call through the service, by exact, case-sensitive name: each 1 to 128 letters,
+	 * numbers, underscores, hyphens or dots. The proxy refuses a call to any other tool and leaves it out of the
+	 * server's tool list. Leave it out, or send null, to allow every tool. Needs an Infisical version that
 	 * accepts a tool list on a session's services; an older one refuses the session.
 	 */
 	allowedTools?: string[] | null;
