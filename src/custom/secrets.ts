@@ -92,7 +92,8 @@ export default class SecretsClient {
         expandSecretReferences: convertBool(
           defaultBoolean(options.expandSecretReferences, true)
         ),
-        includeImports: convertBool(options.includeImports),
+        // the v3 endpoint reads include_imports and ignores includeImports
+        include_imports: convertBool(options.includeImports),
         secretPath: options.secretPath,
         type: options.type,
         version: options.version,
