@@ -50,7 +50,8 @@ const SESSION = {
 	revokedAt: null,
 	createdAt: CREATED_AT,
 	accessBundle: SESSION_ACCESS_BUNDLE,
-	services: []
+	services: [],
+	metadata: {}
 };
 const CREATED_SESSION = {
 	id: SESSION_ID,
@@ -60,7 +61,8 @@ const CREATED_SESSION = {
 	expiresAt: SESSION.expiresAt,
 	createdAt: CREATED_AT,
 	accessBundle: SESSION_ACCESS_BUNDLE,
-	services: []
+	services: [],
+	metadata: {}
 };
 // A service sent with a session, as the SDK takes it and as the API returns it (without its secrets).
 const INLINE_SERVICE_INPUT = {
@@ -809,11 +811,37 @@ describe("agent vault sessions", () => {
 		expect(created.projectId).toBe(PROJECT_ID);
 	});
 
-	it.each(["nightly deploy", null])("update always sends the label (%j)", async (label) => {
+	it.each(["nightly deploy", null])("update sends a label it's given (%j)", async (label) => {
 		respondWith({ session: { ...SESSION, label } });
 		const updated = await agentVault.sessions.update(SESSION_ID, { label });
 		expect(lastRequest().body).toEqual({ label });
 		expect(updated.label).toBe(label);
+	});
+
+	it("create sends metadata and reads it back", async () => {
+		const metadata = { runId: "8812", team: "platform" };
+		respondWith({ session: { ...CREATED_SESSION, metadata } });
+		const created = await agentVault.sessions.create({ ...PROJECT, accessBundle: "release", metadata });
+		expect(lastRequest().body).toEqual({ projectId: PROJECT_ID, accessBundle: "release", metadata });
+		expect(created.metadata).toEqual(metadata);
+	});
+
+	it("reads a session's metadata", async () => {
+		respondWith({ session: { ...SESSION, metadata: { runId: "8812" } } });
+		expect((await agentVault.sessions.get(SESSION_ID)).metadata.runId).toBe("8812");
+	});
+
+	it.each<Record<string, string>>([{ runId: "8812" }, {}])("update sends only metadata (%j)", async (metadata) => {
+		respondWith({ session: { ...SESSION, metadata } });
+		const updated = await agentVault.sessions.update(SESSION_ID, { metadata });
+		expect(lastRequest().body).toEqual({ metadata });
+		expect(updated.metadata).toEqual(metadata);
+	});
+
+	it("update sends a label and metadata together", async () => {
+		respondWith({ session: { ...SESSION, label: "nightly deploy", metadata: { runId: "8812" } } });
+		await agentVault.sessions.update(SESSION_ID, { label: "nightly deploy", metadata: { runId: "8812" } });
+		expect(lastRequest().body).toEqual({ label: "nightly deploy", metadata: { runId: "8812" } });
 	});
 
 	it("create leaves out ttl so the server picks the default", async () => {
