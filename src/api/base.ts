@@ -35,7 +35,9 @@ export const buildUrl = (
 	const url = new URL(relative, baseURL);
 	for (const [key, value] of Object.entries(params)) {
 		if (value === undefined || value === null) continue;
-		url.searchParams.append(key, String(value));
+		for (const item of Array.isArray(value) ? value : [value]) {
+			url.searchParams.append(key, String(item));
+		}
 	}
 	return url.toString();
 };

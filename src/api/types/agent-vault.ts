@@ -734,6 +734,8 @@ export interface ListAgentVaultSessionsRequest {
 	/** Statuses, separated by commas. */
 	status?: string;
 	search?: string;
+	/** Metadata filters, each "key=value". */
+	metadata?: string[];
 	limit: number;
 	offset: number;
 }
@@ -876,6 +878,8 @@ export type ListAgentVaultSessionsOptions = {
 	statuses?: (AgentVaultSessionStatus | `${AgentVaultSessionStatus}`)[];
 	/** Match sessions by label, actor name, actor email, the name or email of the user a session was started on behalf of, or access bundle name. */
 	search?: string;
+	/** Only return sessions whose metadata matches every one of these key-value pairs exactly, such as { runId: "8812" }. Up to 20 pairs. */
+	metadata?: Record<string, string>;
 	/** The maximum number of sessions to return (1-100). Defaults to 20. */
 	limit?: number;
 	/** How many sessions to skip. Defaults to 0. */

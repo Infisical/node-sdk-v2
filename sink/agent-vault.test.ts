@@ -881,6 +881,22 @@ describe("agent vault sessions", () => {
 		});
 		expect(lastRequest().query).toMatchObject({ scope: "all", status: "active,expired" });
 	});
+
+	it("list sends each metadata pair as its own metadata parameter", async () => {
+		respondWith({ sessions: [], totalCount: 0 });
+		await agentVault.sessions.list({ ...PROJECT, metadata: { runId: "8812", env: "prod" } });
+		const [url] = fetchSpy.mock.calls.at(-1) as [string];
+		expect(url).toBe(
+			`https://infisical.example.com/api/v1/agent-vault/sessions?projectId=${PROJECT_ID}&scope=mine&metadata=runId%3D8812&metadata=env%3Dprod&limit=20&offset=0`
+		);
+		expect(new URL(url).searchParams.getAll("metadata")).toEqual(["runId=8812", "env=prod"]);
+	});
+
+	it("list leaves out an empty metadata filter", async () => {
+		respondWith({ sessions: [], totalCount: 0 });
+		await agentVault.sessions.list({ ...PROJECT, metadata: {} });
+		expect(lastRequest().query).not.toHaveProperty("metadata");
+	});
 });
 
 describe("agent vault access bundles", () => {
