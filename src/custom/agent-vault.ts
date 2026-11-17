@@ -37,6 +37,12 @@ const joinHosts = (allowedHosts: string | string[] | undefined): string | null |
 /** The API takes a list in a query parameter as one comma-separated string. */
 const joinList = (values: string[] | undefined) => (values?.length ? values.join(",") : undefined);
 
+/** The API takes each metadata filter as its own "key=value" query parameter, repeated rather than comma-separated. */
+const metadataFilters = (metadata: Record<string, string> | undefined) => {
+	const filters = Object.entries(metadata ?? {}).map(([key, value]) => `${key}=${value}`);
+	return filters.length ? filters : undefined;
+};
+
 /**
  * The old name of service-hosts. Infisical stores service-hosts under this name and still accepts it, while a version
  * from before the rename accepts and returns only this name.
@@ -175,6 +181,7 @@ export default class AgentVaultClient {
 					scope: options.scope ?? AgentVaultSessionScope.Mine,
 					status: joinList(options.statuses),
 					search: options.search,
+					metadata: metadataFilters(options.metadata),
 					limit: options.limit ?? 20,
 					offset: options.offset ?? 0
 				});
@@ -225,19 +232,24 @@ export default class AgentVaultClient {
 					// Left out unless you pass it, so the server picks the default: 7d, or 1h on behalf of a user.
 					ttl: options.ttl,
 					label: options.label,
+					metadata: options.metadata,
 					onBehalfOf
 				});
 				return withServices(res.session);
 			}),
 
 		/**
-		 * Updates the label of an Agent Vault session. This also works after the session expires or is revoked.
+		 * Updates the label or metadata of an Agent Vault session. Pass label, metadata, or both; a value you leave out
+		 * stays as it is. This also works after the session expires or is revoked, but not once the session's owner, or
+		 * the user it was started on behalf of, is deleted.
 		 * @returns The updated session.
 		 */
 		update: (sessionId: string, options: UpdateAgentVaultSessionOptions) =>
 			run(async () => {
-				// The label is always sent: null removes it, and the API rejects a request without one.
-				const res = await this.apiClient.sessions.update(sessionId, { label: options.label });
+				const res = await this.apiClient.sessions.update(sessionId, {
+					label: options.label,
+					metadata: options.metadata
+				});
 				return withServices(res.session);
 			}),
 

@@ -94,6 +94,12 @@ describe("buildUrl", () => {
 		expect(url.searchParams.get("limit")).toBe("100");
 	});
 
+	it("repeats the parameter for each array item", () => {
+		expect(buildUrl(base, "sessions", { metadata: ["a=1", "b=2"] })).toBe(
+			"https://example.com/api/v1/sessions?metadata=a%3D1&metadata=b%3D2"
+		);
+	});
+
 	it("works with baseURL that has a path component", () => {
 		const result = buildUrl(
 			"https://app.infisical.com/api/",

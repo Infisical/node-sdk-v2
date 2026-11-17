@@ -383,6 +383,8 @@ export interface AgentVaultSession {
 	accessBundle: AgentVaultSessionAccessBundle | null;
 	/** The services sent with the session when it was created, without their secrets. Empty if it carries only an access bundle. */
 	services: AgentVaultInlineService[];
+	/** The session's metadata as key-value pairs, such as { runId: "8812" }. Empty if it has none. */
+	metadata: Record<string, string>;
 }
 
 /** An Agent Vault session as returned at creation. */
@@ -400,6 +402,8 @@ export interface CreatedAgentVaultSession {
 	accessBundle: AgentVaultSessionAccessBundle | null;
 	/** The services sent with the session, without their secrets. Empty if it carries only an access bundle. */
 	services: AgentVaultInlineService[];
+	/** The session's metadata as key-value pairs. Empty if it has none. */
+	metadata: Record<string, string>;
 }
 
 export interface ListAgentVaultSessionsResponse {
@@ -730,6 +734,8 @@ export interface ListAgentVaultSessionsRequest {
 	/** Statuses, separated by commas. */
 	status?: string;
 	search?: string;
+	/** Metadata filters, each "key=value". */
+	metadata?: string[];
 	limit: number;
 	offset: number;
 }
@@ -740,11 +746,13 @@ export interface CreateAgentVaultSessionRequest {
 	services?: AgentVaultInlineServiceInput[];
 	ttl?: string;
 	label?: string;
+	metadata?: Record<string, string>;
 	onBehalfOf?: { userEmail: string } | { userId: string };
 }
 
 export interface UpdateAgentVaultSessionRequest {
-	label: string | null;
+	label?: string | null;
+	metadata?: Record<string, string>;
 }
 
 export interface ListAgentVaultAccessBundlesRequest {
@@ -870,6 +878,8 @@ export type ListAgentVaultSessionsOptions = {
 	statuses?: (AgentVaultSessionStatus | `${AgentVaultSessionStatus}`)[];
 	/** Match sessions by label, actor name, actor email, the name or email of the user a session was started on behalf of, or access bundle name. */
 	search?: string;
+	/** Only return sessions whose metadata matches every one of these key-value pairs exactly, such as { runId: "8812" }. Up to 20 pairs. */
+	metadata?: Record<string, string>;
 	/** The maximum number of sessions to return (1-100). Defaults to 20. */
 	limit?: number;
 	/** How many sessions to skip. Defaults to 0. */
@@ -892,15 +902,28 @@ export type CreateAgentVaultSessionOptions = {
 	ttl?: string;
 	/** A short description of what the session is for, such as "nightly deploy". Up to 128 characters, without line breaks, tabs, or invisible characters. */
 	label?: string;
+	/**
+	 * Key-value pairs to tag the session with, such as { runId: "8812" }. Up to 20 keys. A key is 1 to 255 characters
+	 * and a value up to 1020, without line breaks, tabs, or invisible characters. Keys that match once trimmed are
+	 * rejected.
+	 */
+	metadata?: Record<string, string>;
 	/** The email address of the user to start the session on behalf of. Can't be combined with onBehalfOfUserId. */
 	onBehalfOfUserEmail?: string;
 	/** The ID of the user to start the session on behalf of. Can't be combined with onBehalfOfUserEmail. */
 	onBehalfOfUserId?: string;
 };
 
+/** Pass label, metadata, or both. A value you leave out stays as it is. */
 export type UpdateAgentVaultSessionOptions = {
-	/** The new label, up to 128 characters, without line breaks, tabs, or invisible characters. Pass null or an empty string to remove the label. You can't change the label once the session's owner, or the user it was started on behalf of, is deleted. */
-	label: string | null;
+	/** The new label, up to 128 characters, without line breaks, tabs, or invisible characters. Pass null or an empty string to remove the label. */
+	label?: string | null;
+	/**
+	 * The session's new metadata, which replaces all of it. Pass {} to remove it. Up to 20 keys. A key is 1 to 255
+	 * characters and a value up to 1020, without line breaks, tabs, or invisible characters. Keys that match once
+	 * trimmed are rejected.
+	 */
+	metadata?: Record<string, string>;
 };
 
 export type ListAgentVaultAccessBundlesOptions = {
