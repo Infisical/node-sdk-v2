@@ -58,7 +58,7 @@ export interface GetSecretRequest {
   workspaceId: string;
   environment: string;
   expandSecretReferences?: string;
-  includeImports?: string;
+  include_imports?: string;
   secretPath?: string;
   type?: SecretType;
   version?: number;
