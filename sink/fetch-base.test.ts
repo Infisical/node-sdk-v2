@@ -1,5 +1,86 @@
+import { once } from "node:events";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { ApiClient, buildUrl, parseBody } from "../src/api/base";
+
+describe("response body timeout", () => {
+	it.each([
+		{ status: 200, timeout: undefined, method: "get" },
+		{ status: 503, timeout: undefined, method: "get" },
+		{ status: 200, timeout: 200.5, method: "get" },
+		{ status: 200, timeout: undefined, method: "postOnce" },
+		{ status: 503, timeout: undefined, method: "deleteOnce" },
+	] as const)("aborts a stalled $status body for $method with timeout override $timeout", async ({ status, timeout, method }) => {
+		let headersSent = false;
+		let slowRequests = 0;
+		let bodyFinished = false;
+		const server = createServer((request, response) => {
+			response.writeHead(request.url === "/slow" ? status : 200, {
+				"Content-Type": "application/json",
+			});
+			if (request.url !== "/slow") {
+				response.end('{"message":"ready"}');
+				return;
+			}
+			slowRequests++;
+			response.write('{"message":');
+			headersSent = true;
+			const timer = setTimeout(() => {
+				bodyFinished = true;
+				response.end('"finished"}');
+			}, 600);
+			response.once("close", () => clearTimeout(timer));
+		});
+		server.listen(0, "127.0.0.1");
+		await once(server, "listening");
+		const { port } = server.address() as AddressInfo;
+		const client = new ApiClient({
+			baseURL: `http://127.0.0.1:${port}`,
+			timeout: timeout === undefined ? 200 : 1_000,
+		});
+		try {
+			const request = method === "postOnce"
+				? client.postOnce("/slow", undefined, { timeout })
+				: client[method]("/slow", { timeout });
+			await expect(request).rejects.toMatchObject({
+				name: "TimeoutError",
+			});
+			expect(headersSent).toBe(true);
+			expect(slowRequests).toBe(1);
+			expect(bodyFinished).toBe(false);
+			await expect(client.get("/fast")).resolves.toEqual({ message: "ready" });
+		} finally {
+			server.closeAllConnections();
+			await new Promise<void>((resolve) => server.close(() => resolve()));
+		}
+	});
+
+	it("uses a fresh timeout after a rate-limit retry", async () => {
+		let attempts = 0;
+		const server = createServer((_request, response) => {
+			attempts++;
+			response.writeHead(attempts === 1 ? 429 : 200, {
+				"Content-Type": "application/json",
+			});
+			response.end('{"message":"ready"}');
+		});
+		server.listen(0, "127.0.0.1");
+		await once(server, "listening");
+		const { port } = server.address() as AddressInfo;
+		const client = new ApiClient({
+			baseURL: `http://127.0.0.1:${port}`,
+			timeout: 200,
+		});
+		try {
+			await expect(client.get("/retry")).resolves.toEqual({ message: "ready" });
+			expect(attempts).toBe(2);
+		} finally {
+			server.closeAllConnections();
+			await new Promise<void>((resolve) => server.close(() => resolve()));
+		}
+	});
+});
 
 describe("parseBody", () => {
 	it("returns undefined for 204 status", async () => {
