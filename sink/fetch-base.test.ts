@@ -370,3 +370,67 @@ describe("postOnce", () => {
 		expect(fetchSpy).toHaveBeenCalledTimes(2);
 	});
 });
+
+describe("get", () => {
+	const baseURL = "https://example.com/api/v1/";
+
+	let fetchSpy: ReturnType<typeof vi.fn>;
+	let client: ApiClient;
+
+	const okResponse = () => new Response('{"ok":true}', { status: 200 });
+
+	beforeEach(() => {
+		vi.useFakeTimers();
+		fetchSpy = vi.fn();
+		vi.stubGlobal("fetch", fetchSpy);
+		client = new ApiClient({ baseURL });
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.unstubAllGlobals();
+	});
+
+	it.each([502, 503, 504])("retries a %s and returns the response that follows", async (status) => {
+		fetchSpy.mockResolvedValueOnce(new Response("unavailable", { status })).mockResolvedValueOnce(okResponse());
+
+		const promise = client.get("/secrets/raw");
+		await vi.runAllTimersAsync();
+
+		expect(await promise).toEqual({ ok: true });
+		expect(fetchSpy).toHaveBeenCalledTimes(2);
+	});
+
+	it("rejects with the 503 once every retry got one", async () => {
+		fetchSpy.mockImplementation(() => Promise.resolve(new Response('{"message":"unavailable"}', { status: 503 })));
+
+		const assertion = expect(client.get("/secrets/raw")).rejects.toMatchObject({
+			response: { status: 503, data: { message: "unavailable" } }
+		});
+		await vi.runAllTimersAsync();
+		await assertion;
+
+		// 1 initial + 4 retries
+		expect(fetchSpy).toHaveBeenCalledTimes(5);
+	});
+
+	it.each([400, 401, 403, 404, 500])("doesn't retry a %s", async (status) => {
+		fetchSpy.mockResolvedValue(new Response("{}", { status }));
+
+		const assertion = expect(client.get("/secrets/raw")).rejects.toMatchObject({ response: { status } });
+		await vi.runAllTimersAsync();
+		await assertion;
+
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+	});
+
+	it("post doesn't retry a 503, since the server may have acted on it", async () => {
+		fetchSpy.mockResolvedValue(new Response("{}", { status: 503 }));
+
+		const assertion = expect(client.post("/x", { a: 1 })).rejects.toMatchObject({ response: { status: 503 } });
+		await vi.runAllTimersAsync();
+		await assertion;
+
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+	});
+});

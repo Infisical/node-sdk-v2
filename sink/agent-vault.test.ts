@@ -1081,8 +1081,11 @@ describe("agent vault errors", () => {
 	it("keeps a large response body out of the printed error, but readable in cause.response.data", async () => {
 		const page = `<html><body>${"<p>Bad gateway</p>".repeat(8500)}</body></html>`;
 		fetchSpy.mockImplementation(async () => new Response(page, { status: 502, headers: { "Content-Type": "text/html" } }));
+		vi.useFakeTimers();
 
-		const error = (await agentVault.sessions.get(SESSION_ID).catch((err: unknown) => err)) as InfisicalSDKError;
+		const pending = agentVault.sessions.get(SESSION_ID).catch((err: unknown) => err);
+		await vi.runAllTimersAsync();
+		const error = (await pending) as InfisicalSDKError;
 
 		expect(error).toBeInstanceOf(InfisicalSDKError);
 		expect(error.message).toBe("Request failed with status 502");

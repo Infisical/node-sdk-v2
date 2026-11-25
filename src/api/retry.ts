@@ -4,11 +4,14 @@ export interface FetchRetryOptions {
 	backoffFactor?: number;
 	/** Whether to retry an error thrown by fetch, such as a network error. Defaults to retrying every one. */
 	shouldRetryError?: (err: unknown) => boolean;
+	/** Response statuses that are sent again. Defaults to 429 only. */
+	retryStatuses?: readonly number[];
 }
 
 const DEFAULT_MAX_RETRIES = 4;
 const DEFAULT_INITIAL_DELAY_MS = 1000;
 const DEFAULT_BACKOFF_FACTOR = 2;
+const DEFAULT_RETRY_STATUSES: readonly number[] = [429];
 const JITTER_FRACTION = 0.2;
 
 // Raised before a connection opens, so the request never reached the server: a failed DNS lookup, a refused
@@ -50,6 +53,7 @@ export const fetchWithRetry = async (
 	const initialDelayMs = opts.initialDelayMs ?? DEFAULT_INITIAL_DELAY_MS;
 	const backoffFactor = opts.backoffFactor ?? DEFAULT_BACKOFF_FACTOR;
 	const shouldRetryError = opts.shouldRetryError ?? (() => true);
+	const retryStatuses = opts.retryStatuses ?? DEFAULT_RETRY_STATUSES;
 
 	const delayFor = (attempt: number): number => {
 		const base = initialDelayMs * Math.pow(backoffFactor, attempt - 1);
@@ -61,7 +65,7 @@ export const fetchWithRetry = async (
 		try {
 			const response = await fn();
 
-			if (response.status === 429 ) {
+			if (retryStatuses.includes(response.status)) {
 				attempt++;
 				if (attempt > maxRetries) return response;
 				await response.body?.cancel(); // cancel the body to release the socket back to pool
