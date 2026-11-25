@@ -190,6 +190,28 @@ describe("fetchWithRetry", () => {
 		setTimeoutSpy.mockRestore();
 	});
 
+	it("retries the statuses in retryStatuses and leaves the rest alone", async () => {
+		const fn = vi
+			.fn()
+			.mockResolvedValueOnce(new Response("unavailable", { status: 503 }))
+			.mockResolvedValueOnce(serverErrorResponse());
+
+		const promise = fetchWithRetry(fn, { maxRetries: 3, retryStatuses: [503] });
+		await vi.runAllTimersAsync();
+
+		expect((await promise).status).toBe(500);
+		expect(fn).toHaveBeenCalledTimes(2);
+	});
+
+	it("doesn't retry a 429 when retryStatuses leaves it out", async () => {
+		const fn = vi.fn().mockResolvedValue(rateLimitResponse());
+
+		const result = await fetchWithRetry(fn, { maxRetries: 3, retryStatuses: [503] });
+
+		expect(result.status).toBe(429);
+		expect(fn).toHaveBeenCalledTimes(1);
+	});
+
 	it("throws a network error that shouldRetryError rejects without retrying", async () => {
 		const error = new TypeError("fetch failed");
 		const fn = vi.fn().mockRejectedValue(error);

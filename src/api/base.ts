@@ -21,6 +21,9 @@ export interface RequestConfig {
 const DEFAULT_TIMEOUT_MS = 10_000;
 const JSON_CONTENT_TYPE = "application/json";
 const FORM_URLENCODED_CONTENT_TYPE = "application/x-www-form-urlencoded";
+// A GET doesn't change anything on the server, so it can also be sent again after the gateway errors a deploy or an
+// overloaded instance returns. Other methods retry 429 only, since the server may have acted on them before failing.
+const GET_RETRY_STATUSES = [429, 502, 503, 504];
 
 /** @internal */
 export const buildUrl = (
@@ -96,7 +99,7 @@ export class ApiClient {
 	}
 
 	public get<T>(url: string, config?: RequestConfig): Promise<T> {
-		return this.request<T>("GET", url, undefined, config);
+		return this.request<T>("GET", url, undefined, config, { retryStatuses: GET_RETRY_STATUSES });
 	}
 
 	public post<T>(
